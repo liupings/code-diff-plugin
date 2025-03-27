@@ -1,0 +1,46 @@
+<!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
+<idea-plugin>
+    <!-- Unique identifier of the plugin. It should be FQN. It cannot be changed between the plugin versions. -->
+    <id>com.rj.diff</id>
+
+    <!-- Public plugin name should be written in Title Case.
+         Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-name -->
+    <name>diff</name>
+
+    <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
+    <vendor email="support@lping.com" url="https://www.yourcompany.com">lping</vendor>
+
+    <!-- Description of the plugin displayed on the Plugin Page and IDE Plugin Manager.
+         Simple HTML elements (text formatting, paragraphs, and lists) can be added inside of <![CDATA[ ]]> tag.
+         Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-description -->
+    <description><![CDATA[ 理发店水力发理发店水力发电第三方理发店水力发电第三方理发店水力发电第三方理发店水力发电第三方理发店水力发电第三方电第三方  ]]></description>
+
+    <!-- Product and plugin compatibility requirements.
+         Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
+    <depends>com.intellij.modules.platform</depends>
+
+    <!-- Extension points defined by the plugin.
+         Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
+    <extensions defaultExtensionNs="com.intellij">
+        <notificationGroup id="CodeDiff.Notification.Group" displayType="BALLOON"/>
+    </extensions>
+
+    <!--    <application-components>-->
+    <!--        <component>-->
+    <!--            <implementation-class></implementation-class>-->
+    <!--        </component>-->
+    <!--    </application-components>-->
+    <actions>
+
+        <!--<action id="CodeDiff.OpenDialog" class="com.rj.diff.dialog1.MyOpenCodeDiffAction"
+                text="从快速开发平台更新代码" description="Compare current code with code from a URL">
+            <add-to-group group-id="EditorPopupMenu" anchor="first"/>
+            <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt U"/>
+        </action>-->
+        <action id="CodeCompareAction" class="com.rj.diff.dialog2.ShowCodeCompareAction" text="代码对比" description="对比本地和远程代码">
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+        </action>
+
+    </actions>
+</idea-plugin>
