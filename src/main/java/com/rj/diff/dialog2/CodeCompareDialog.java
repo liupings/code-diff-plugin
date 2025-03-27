@@ -243,4 +243,5 @@ public class CodeCompareDialog extends DialogWrapper {
             JOptionPane.showMessageDialog(mainPanel, "保存文件失败: " + ex.getMessage(), "错误", JOptionPane.ERROR_MESSAGE);
         }
     }
+
 }
