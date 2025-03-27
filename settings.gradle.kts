@@ -13,4 +13,4 @@ pluginManagement {
     }
 }
 
-rootProject.name = "diff"
+rootProject.name = "code-diff-plugin"
