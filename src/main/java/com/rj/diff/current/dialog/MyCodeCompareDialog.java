@@ -1,21 +1,11 @@
-package com.rj.diff.mydialog;
+package com.rj.diff.current.dialog;
 
-import cn.hutool.core.swing.clipboard.ClipboardListener;
 import cn.hutool.http.HttpUtil;
-import com.intellij.diff.*;
-import com.intellij.diff.contents.DiffContent;
-import com.intellij.diff.requests.DiffRequest;
-import com.intellij.diff.requests.SimpleDiffRequest;
-import com.intellij.ide.highlighter.JavaFileType;
 import com.intellij.ide.ui.LafManager;
-import com.intellij.openapi.actionSystem.AnAction;
-import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.colors.EditorColorsManager;
 import com.intellij.openapi.editor.colors.EditorFontType;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
-import com.intellij.openapi.fileTypes.FileType;
-import com.intellij.openapi.fileTypes.FileTypeManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.DialogWrapper;
@@ -26,7 +16,6 @@ import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rsyntaxtextarea.Theme;
 import org.fife.ui.rtextarea.RTextScrollPane;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
@@ -36,7 +25,6 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultHighlighter;
 import javax.swing.text.Highlighter;
 import java.awt.*;
-import java.awt.datatransfer.*;
 import java.awt.event.ActionEvent;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -71,7 +59,7 @@ public class MyCodeCompareDialog extends DialogWrapper {
         // 允许调整大小
         setResizable(true);
         this.sourceFilePath = sourceFilePath;
-        setTitle("代码对比工具");
+        setTitle("代码对比");
         setModal(true);
         this.project = project;
         this.currentFile = currentFile;
@@ -80,12 +68,12 @@ public class MyCodeCompareDialog extends DialogWrapper {
         rightTextArea = createSyntaxTextArea();
         leftTextArea.setText(sourceCode);
 
-        fetchButton = new JButton("获取远程代码");
+        fetchButton = new JButton("获取快速开发平台代码");
         compareButton = new JButton("对比代码");
         applyAllButton = new JButton("全部应用");
         applySelectedButton = new JButton("应用选中");
         saveButton = new JButton("保存到源文件");
-        urlTextField = new JTextField(30);
+        urlTextField = new JTextField("http://172.16.1.11/api/table-info/api/getSqlByTable/59",30);
         //languageComboBox = new ComboBox<>(new String[]{"Java", "Kotlin", "Python", "JavaScript", "HTML", "XML", "SQL", "JSON"});
         languageComboBox = new ComboBox<>(new String[]{"Java"});
         languageComboBox.setVisible(Boolean.FALSE);
@@ -138,7 +126,12 @@ public class MyCodeCompareDialog extends DialogWrapper {
         textArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JAVA);
         textArea.setCodeFoldingEnabled(true);
         textArea.setAntiAliasingEnabled(true);
-
+        // 启用边界线显示
+        //textArea.setMarginLineEnabled(true);
+        // 设置边界线的位置，通常是 80 或者 100 字符处
+        //textArea.setMarginLinePosition(80);
+        // 启用清除空白行中的空白字符
+        textArea.setClearWhitespaceLinesEnabled(true);
         // 使用 IDE 的字体设置
         Font editorFont = EditorColorsManager.getInstance().getGlobalScheme().getFont(EditorFontType.PLAIN);
         textArea.setFont(editorFont);
@@ -162,11 +155,11 @@ public class MyCodeCompareDialog extends DialogWrapper {
 
     @Override
     protected JComponent createCenterPanel() {
-        JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
-        mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        JPanel mainPanel = new JPanel(new BorderLayout());
+        mainPanel.setBorder(BorderFactory.createEmptyBorder());
 
         // 顶部控制面板
-        JPanel controlPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
+        JPanel controlPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         controlPanel.add(new JLabel("URL:"));
         controlPanel.add(urlTextField);
         controlPanel.add(fetchButton);
@@ -175,17 +168,22 @@ public class MyCodeCompareDialog extends DialogWrapper {
         controlPanel.add(compareButton);
 
         // 代码对比面板
-        JPanel codePanel = new JPanel(new GridLayout(1, 2, 10, 10));
+        JPanel codePanel = new JPanel(new GridLayout());
         //codePanel.add(createTextAreaPanel("当前代码", leftTextArea));
         //codePanel.add(createTextAreaPanel("远程代码", rightTextArea));
 
         RTextScrollPane currentCode = new RTextScrollPane(createTextAreaPanel("当前代码", leftTextArea));
-        RTextScrollPane rightCode = new RTextScrollPane(createTextAreaPanel("远程代码", rightTextArea));
+        RTextScrollPane rightCode = new RTextScrollPane(createTextAreaPanel("快速开发平台代码", rightTextArea));
         codePanel.add(currentCode);
         codePanel.add(rightCode);
 
         JScrollBar leftScrollBar = currentCode.getVerticalScrollBar();
         JScrollBar rightScrollBar = rightCode.getVerticalScrollBar();
+
+        JScrollBar horizontalScrollBar = currentCode.getHorizontalScrollBar();
+        JScrollBar horizontalScrollBar1 = rightCode.getHorizontalScrollBar();
+        horizontalScrollBar.setUnitIncrement(30);
+        horizontalScrollBar1.setBlockIncrement(30);
 
         // 设置滚动步长（值可以调整）
         int unitIncrement = 30;  // 单位增量，控制鼠标滚轮滚动速度
@@ -217,7 +215,7 @@ public class MyCodeCompareDialog extends DialogWrapper {
 
     @Override
     protected JComponent createSouthPanel() {
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 5));
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         buttonPanel.add(applySelectedButton);
         buttonPanel.add(applyAllButton);
         buttonPanel.add(saveButton);
@@ -234,6 +232,7 @@ public class MyCodeCompareDialog extends DialogWrapper {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBorder(BorderFactory.createTitledBorder(title));
         JBScrollPane scrollPane = new JBScrollPane(textArea);
+        scrollPane.setBorder(BorderFactory.createEmptyBorder());
         panel.add(scrollPane, BorderLayout.CENTER);
         return panel;
     }

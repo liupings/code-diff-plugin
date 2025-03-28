@@ -1,4 +1,4 @@
-package com.rj.diff.mydialog;
+package com.rj.diff.current.dialog;
 
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;

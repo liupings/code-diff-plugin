@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.rj.diff.mydialog;
+package com.rj.diff.current.dialog;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
