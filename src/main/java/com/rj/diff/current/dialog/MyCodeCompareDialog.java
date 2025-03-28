@@ -31,6 +31,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.prefs.Preferences;
 
 public class MyCodeCompareDialog extends DialogWrapper {
@@ -83,6 +84,8 @@ public class MyCodeCompareDialog extends DialogWrapper {
         removedPainter = new DefaultHighlighter.DefaultHighlightPainter(new Color(255, 182, 193, 100));
 
         init();
+        addTextChangeListener(leftTextArea);
+        addTextChangeListener(rightTextArea);
         setupListeners();
         loadPreferences();
 
@@ -306,6 +309,8 @@ public class MyCodeCompareDialog extends DialogWrapper {
                 SwingUtilities.invokeLater(() -> {
                     rightTextArea.setText(remoteCode);
                     savePreferences();
+                    // 自动触发代码对比
+                    compareCode(null);
                 });
             } catch (Exception ex) {
                 SwingUtilities.invokeLater(() ->
@@ -352,12 +357,12 @@ public class MyCodeCompareDialog extends DialogWrapper {
         String rightText = rightTextArea.getText();
 
         if (leftText.isEmpty() || rightText.isEmpty()) {
-            JOptionPane.showMessageDialog(getWindow(),
-                    "两侧代码都不能为空", "错误", JOptionPane.ERROR_MESSAGE);
+            //JOptionPane.showMessageDialog(getWindow(),
+            //        "两侧代码都不能为空", "错误", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-        new Thread(() -> {
+        CompletableFuture.runAsync(() -> {
             // 使用diff-match-patch计算差异
             diff_match_patch dmp = new diff_match_patch();
             LinkedList<diff_match_patch.Diff> diffs = dmp.diff_main(leftText, rightText);
@@ -371,7 +376,7 @@ public class MyCodeCompareDialog extends DialogWrapper {
                 // 应用高亮显示差异
                 highlightDifferences(diffs);
             });
-        }).start();
+        });
     }
 
     private void highlightDifferences(List<diff_match_patch.Diff> diffs) {
@@ -487,6 +492,26 @@ public class MyCodeCompareDialog extends DialogWrapper {
         String syntaxStyle = getSyntaxStyleForLanguage(lastLanguage);
         leftTextArea.setSyntaxEditingStyle(syntaxStyle);
         rightTextArea.setSyntaxEditingStyle(syntaxStyle);
+    }
+
+    // 文本变化监听器
+    private void addTextChangeListener(JTextArea textArea) {
+        textArea.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                compareCode(null);
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                compareCode(null);
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                compareCode(null);
+            }
+        });
     }
 
     @Override
