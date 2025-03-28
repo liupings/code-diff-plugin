@@ -86,8 +86,8 @@ public class MyCodeCompareDialog extends DialogWrapper {
         languageComboBox.setVisible(Boolean.FALSE);
 
         // 设置高亮颜色
-        addedPainter = new DefaultHighlighter.DefaultHighlightPainter(new Color(118, 206, 118, 100));
-        removedPainter = new DefaultHighlighter.DefaultHighlightPainter(new Color(191, 185, 186, 100));
+        addedPainter = new DefaultHighlighter.DefaultHighlightPainter(new Color(218, 53, 53, 119));
+        removedPainter = new DefaultHighlighter.DefaultHighlightPainter(new Color(243, 243, 24, 100));
 
         init();
         addTextChangeListener(leftTextArea);
@@ -156,6 +156,9 @@ public class MyCodeCompareDialog extends DialogWrapper {
                 Theme theme = Theme.load(getClass().getResourceAsStream("/org/fife/ui/rsyntaxtextarea/themes/dark.xml"));
                 theme.apply(textArea);
             }
+
+            textArea.setBackground(new Color(43, 43, 43));
+            textArea.setSelectionColor(new Color(59, 117, 231));
         } catch (IOException e) {
             // 使用默认主题
         }
@@ -287,13 +290,13 @@ public class MyCodeCompareDialog extends DialogWrapper {
 
     //自动格式化 Java 代码
     private void autoFormatCode(RSyntaxTextArea textArea) {
- //       try {
- //String formattedCode = new Formatter().formatSource(textArea.getText());
- //           textArea.setText(formattedCode);
- //       } catch (FormatterException e) {
- //           CodeDiffNotifications.showError(project, "错误", "格式化失败");
- //
- //       }
+        //       try {
+        //String formattedCode = new Formatter().formatSource(textArea.getText());
+        //           textArea.setText(formattedCode);
+        //       } catch (FormatterException e) {
+        //           CodeDiffNotifications.showError(project, "错误", "格式化失败");
+        //
+        //       }
     }
 
     private String getSyntaxStyleForLanguage(String language) {
@@ -424,8 +427,7 @@ public class MyCodeCompareDialog extends DialogWrapper {
                 switch (diff.operation) {
                     case INSERT:
                         // 在右侧显示新增内容
-                        rightTextArea.getHighlighter().addHighlight(
-                                rightPos, rightPos + length, addedPainter);
+                        rightTextArea.getHighlighter().addHighlight(rightPos, rightPos + length, addedPainter);
                         rightPos += length;
                         break;
                     case DELETE:
