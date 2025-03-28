@@ -22,4 +22,8 @@ public class CodeDiffNotifications {
         GROUP.createNotification(title, message, NotificationType.WARNING)
                 .notify(project);
     }
+    public static void showInfo(@NotNull Project project, @NotNull String title, @NotNull String message) {
+        GROUP.createNotification(title, message, NotificationType.INFORMATION)
+                .notify(project);
+    }
 }

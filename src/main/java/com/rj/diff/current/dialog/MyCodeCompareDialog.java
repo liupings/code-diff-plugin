@@ -1,5 +1,7 @@
 package com.rj.diff.current.dialog;
 
+import cn.hutool.core.stream.StreamUtil;
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.HttpUtil;
 import com.intellij.ide.ui.LafManager;
 import com.intellij.openapi.application.ApplicationManager;
@@ -12,6 +14,7 @@ import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.components.JBScrollPane;
+import com.rj.diff.CodeDiffNotifications;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rsyntaxtextarea.Theme;
@@ -122,10 +125,12 @@ public class MyCodeCompareDialog extends DialogWrapper {
 
     @Override
     public void dispose() {
-        // 移除剪贴板监听
         super.dispose();
     }
-
+    private void setSelectionHighlightColor(RSyntaxTextArea textArea) {
+        // 设置选中文本的高亮颜色
+        textArea.setSelectionColor(new Color(173, 216, 230)); // 浅蓝色
+    }
     private RSyntaxTextArea createSyntaxTextArea() {
         RSyntaxTextArea textArea = new RSyntaxTextArea();
         textArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JAVA);
@@ -140,7 +145,8 @@ public class MyCodeCompareDialog extends DialogWrapper {
         // 使用 IDE 的字体设置
         Font editorFont = EditorColorsManager.getInstance().getGlobalScheme().getFont(EditorFontType.PLAIN);
         textArea.setFont(editorFont);
-
+        // 设置选中颜色
+        setSelectionHighlightColor(textArea);
         // 根据 IDE 主题选择合适的语法高亮主题
         try {
             boolean isDarkTheme = LafManager.getInstance().getCurrentUIThemeLookAndFeel().isDark();
@@ -220,15 +226,15 @@ public class MyCodeCompareDialog extends DialogWrapper {
 
     @Override
     protected JComponent createSouthPanel() {
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         buttonPanel.add(applySelectedButton);
         buttonPanel.add(applyAllButton);
         buttonPanel.add(saveButton);
 
         // 添加默认的OK/Cancel按钮
         JPanel southPanel = new JPanel(new BorderLayout());
-        southPanel.add(buttonPanel, BorderLayout.EAST);
-        southPanel.add(super.createSouthPanel(), BorderLayout.WEST);
+        southPanel.add(buttonPanel, BorderLayout.CENTER);
+        //southPanel.add(super.createSouthPanel(), BorderLayout.WEST);
 
         return southPanel;
     }
@@ -299,7 +305,9 @@ public class MyCodeCompareDialog extends DialogWrapper {
     private void fetchRemoteCode(ActionEvent e) {
         String url = urlTextField.getText().trim();
         if (url.isEmpty()) {
-            JOptionPane.showMessageDialog(getWindow(), "请输入URL", "错误", JOptionPane.ERROR_MESSAGE);
+            //JOptionPane.showMessageDialog(getWindow(), "请输入URL", "错误", JOptionPane.ERROR_MESSAGE);
+            CodeDiffNotifications.showError(project, "错误", "请输入URL");
+
             return;
         }
 
@@ -314,9 +322,11 @@ public class MyCodeCompareDialog extends DialogWrapper {
                 });
             } catch (Exception ex) {
                 SwingUtilities.invokeLater(() ->
-                        JOptionPane.showMessageDialog(getWindow(),
-                                "获取远程代码失败: " + ex.getMessage(),
-                                "错误", JOptionPane.ERROR_MESSAGE));
+                                //JOptionPane.showMessageDialog(getWindow(), "获取远程代码失败: " + ex.getMessage(), "错误", JOptionPane.ERROR_MESSAGE)
+                        CodeDiffNotifications.showError(project, "错误", "获取远程代码失败")
+
+                );
+
             }
         });
     }
@@ -413,14 +423,18 @@ public class MyCodeCompareDialog extends DialogWrapper {
     }
 
     private void applyAllChanges(ActionEvent e) {
+        if (StrUtil.isBlank(rightTextArea.getText())) {
+            CodeDiffNotifications.showError(project, "错误", "没有获取到远程内容");
+            return;
+        }
         leftTextArea.setText(rightTextArea.getText());
     }
 
     private void applySelectedChanges(ActionEvent e) {
         String selectedText = rightTextArea.getSelectedText();
         if (selectedText == null || selectedText.isEmpty()) {
-            JOptionPane.showMessageDialog(getWindow(),
-                    "请先在右侧选择要应用的代码", "提示", JOptionPane.INFORMATION_MESSAGE);
+            //JOptionPane.showMessageDialog(getWindow(), "请先在右侧选择要应用的代码", "提示", JOptionPane.INFORMATION_MESSAGE);
+            CodeDiffNotifications.showWarning(project, "警告", "请先在右侧选择要应用的代码");
             return;
         }
 
@@ -436,15 +450,16 @@ public class MyCodeCompareDialog extends DialogWrapper {
                 leftTextArea.replaceSelection(selectedText);
             }
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(getWindow(),
-                    "应用选中代码失败: " + ex.getMessage(), "错误", JOptionPane.ERROR_MESSAGE);
+            //JOptionPane.showMessageDialog(getWindow(), "应用选中代码失败: " + ex.getMessage(), "错误", JOptionPane.ERROR_MESSAGE);
+            CodeDiffNotifications.showWarning(project, "警告", "应用选中代码失败");
+
         }
     }
 
     private void saveToSourceFile(ActionEvent e) {
         if (sourceFilePath == null) {
-            JOptionPane.showMessageDialog(getWindow(),
-                    "未指定源文件路径", "错误", JOptionPane.ERROR_MESSAGE);
+            //JOptionPane.showMessageDialog(getWindow(), "未指定源文件路径", "错误", JOptionPane.ERROR_MESSAGE);
+            CodeDiffNotifications.showWarning(project, "警告", "未指定源文件路径");
             return;
         }
 
@@ -468,11 +483,14 @@ public class MyCodeCompareDialog extends DialogWrapper {
                 // }
             }
 
-            JOptionPane.showMessageDialog(getWindow(),
-                    "保存成功", "成功", JOptionPane.INFORMATION_MESSAGE);
+            //JOptionPane.showMessageDialog(getWindow(), "保存成功", "成功", JOptionPane.INFORMATION_MESSAGE);
+            CodeDiffNotifications.showInfo(project, "提示", "保存成功");
+
+            dispose();
         } catch (IOException ex) {
-            JOptionPane.showMessageDialog(getWindow(),
-                    "保存失败: " + ex.getMessage(), "错误", JOptionPane.ERROR_MESSAGE);
+            //JOptionPane.showMessageDialog(getWindow(), "保存失败: " + ex.getMessage(), "错误", JOptionPane.ERROR_MESSAGE);
+            CodeDiffNotifications.showError(project, "错误", "保存失败");
+
         }
     }
 
