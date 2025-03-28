@@ -159,6 +159,9 @@ public class MyCodeCompareDialog extends DialogWrapper {
 
             textArea.setBackground(new Color(43, 43, 43));
             textArea.setSelectionColor(new Color(59, 117, 231));
+            textArea.setMargin(new Insets(0,3,0,0));
+            textArea.setCaretColor(Color.WHITE); // 设置光标颜色
+
         } catch (IOException e) {
             // 使用默认主题
         }
