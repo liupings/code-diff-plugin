@@ -3,6 +3,8 @@ package com.rj.diff.current.dialog;
 import cn.hutool.core.stream.StreamUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.HttpUtil;
+import com.google.googlejavaformat.java.Formatter;
+import com.google.googlejavaformat.java.FormatterException;
 import com.intellij.ide.ui.LafManager;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.colors.EditorColorsManager;
@@ -54,12 +56,13 @@ public class MyCodeCompareDialog extends DialogWrapper {
     private final Path sourceFilePath;
     private final Highlighter.HighlightPainter addedPainter;
     private final Highlighter.HighlightPainter removedPainter;
+    private boolean isAdjusting = false;
 
 
     public MyCodeCompareDialog(@Nullable Project project, String sourceCode, Path sourceFilePath, VirtualFile currentFile) {
         super(project, true);
         // 设置对话框初始大小
-        setSize(1600, 800);
+        setSize(1500, 800);
         // 允许调整大小
         setResizable(true);
         this.sourceFilePath = sourceFilePath;
@@ -83,8 +86,8 @@ public class MyCodeCompareDialog extends DialogWrapper {
         languageComboBox.setVisible(Boolean.FALSE);
 
         // 设置高亮颜色
-        addedPainter = new DefaultHighlighter.DefaultHighlightPainter(new Color(144, 238, 144, 100));
-        removedPainter = new DefaultHighlighter.DefaultHighlightPainter(new Color(255, 182, 193, 100));
+        addedPainter = new DefaultHighlighter.DefaultHighlightPainter(new Color(118, 206, 118, 100));
+        removedPainter = new DefaultHighlighter.DefaultHighlightPainter(new Color(191, 185, 186, 100));
 
         init();
         addTextChangeListener(leftTextArea);
@@ -127,15 +130,13 @@ public class MyCodeCompareDialog extends DialogWrapper {
     public void dispose() {
         super.dispose();
     }
-    private void setSelectionHighlightColor(RSyntaxTextArea textArea) {
-        // 设置选中文本的高亮颜色
-        textArea.setSelectionColor(new Color(173, 216, 230)); // 浅蓝色
-    }
+
     private RSyntaxTextArea createSyntaxTextArea() {
         RSyntaxTextArea textArea = new RSyntaxTextArea();
         textArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JAVA);
         textArea.setCodeFoldingEnabled(true);
         textArea.setAntiAliasingEnabled(true);
+
         // 启用边界线显示
         //textArea.setMarginLineEnabled(true);
         // 设置边界线的位置，通常是 80 或者 100 字符处
@@ -145,8 +146,6 @@ public class MyCodeCompareDialog extends DialogWrapper {
         // 使用 IDE 的字体设置
         Font editorFont = EditorColorsManager.getInstance().getGlobalScheme().getFont(EditorFontType.PLAIN);
         textArea.setFont(editorFont);
-        // 设置选中颜色
-        setSelectionHighlightColor(textArea);
         // 根据 IDE 主题选择合适的语法高亮主题
         try {
             boolean isDarkTheme = LafManager.getInstance().getCurrentUIThemeLookAndFeel().isDark();
@@ -205,16 +204,20 @@ public class MyCodeCompareDialog extends DialogWrapper {
         leftScrollBar.setBlockIncrement(blockIncrement);
         rightScrollBar.setBlockIncrement(blockIncrement);
 
-        // 添加同步监听
+        // 添加同步监听  防止死循环
         leftScrollBar.addAdjustmentListener(e -> {
-            if (!e.getValueIsAdjusting()) {
+            if (!isAdjusting && !e.getValueIsAdjusting()) {
+                isAdjusting = true;
                 rightScrollBar.setValue(e.getValue());
+                isAdjusting = false;
             }
         });
 
         rightScrollBar.addAdjustmentListener(e -> {
-            if (!e.getValueIsAdjusting()) {
+            if (!isAdjusting && !e.getValueIsAdjusting()) {
+                isAdjusting = true;
                 leftScrollBar.setValue(e.getValue());
+                isAdjusting = false;
             }
         });
 
@@ -282,8 +285,15 @@ public class MyCodeCompareDialog extends DialogWrapper {
         });
     }
 
+    //自动格式化 Java 代码
     private void autoFormatCode(RSyntaxTextArea textArea) {
-        // 这里可以添加自动格式化逻辑
+ //       try {
+ //String formattedCode = new Formatter().formatSource(textArea.getText());
+ //           textArea.setText(formattedCode);
+ //       } catch (FormatterException e) {
+ //           CodeDiffNotifications.showError(project, "错误", "格式化失败");
+ //
+ //       }
     }
 
     private String getSyntaxStyleForLanguage(String language) {
@@ -311,24 +321,36 @@ public class MyCodeCompareDialog extends DialogWrapper {
             return;
         }
 
-        ApplicationManager.getApplication().executeOnPooledThread(() -> {
-            try {
-                String remoteCode = HttpUtil.get(url);
-                SwingUtilities.invokeLater(() -> {
+        //fetchButton.setEnabled(false);
+        CompletableFuture.supplyAsync(() -> HttpUtil.get(url))
+                .thenAccept(remoteCode -> SwingUtilities.invokeLater(() -> {
                     rightTextArea.setText(remoteCode);
-                    savePreferences();
-                    // 自动触发代码对比
                     compareCode(null);
+                    fetchButton.setEnabled(true);
+                }))
+                .exceptionally(ex -> {
+                    SwingUtilities.invokeLater(() -> CodeDiffNotifications.showError(project, "错误", "获取远程代码失败: " + ex.getMessage()));
+                    fetchButton.setEnabled(true);
+                    return null;
                 });
-            } catch (Exception ex) {
-                SwingUtilities.invokeLater(() ->
-                                //JOptionPane.showMessageDialog(getWindow(), "获取远程代码失败: " + ex.getMessage(), "错误", JOptionPane.ERROR_MESSAGE)
-                        CodeDiffNotifications.showError(project, "错误", "获取远程代码失败")
-
-                );
-
-            }
-        });
+        //ApplicationManager.getApplication().executeOnPooledThread(() -> {
+        //    try {
+        //        String remoteCode = HttpUtil.get(url);
+        //        SwingUtilities.invokeLater(() -> {
+        //            rightTextArea.setText(remoteCode);
+        //            savePreferences();
+        //            // 自动触发代码对比
+        //            compareCode(null);
+        //        });
+        //    } catch (Exception ex) {
+        //        SwingUtilities.invokeLater(() ->
+        //                //JOptionPane.showMessageDialog(getWindow(), "获取远程代码失败: " + ex.getMessage(), "错误", JOptionPane.ERROR_MESSAGE)
+        //                CodeDiffNotifications.showError(project, "错误", "获取远程代码失败")
+        //
+        //        );
+        //
+        //    }
+        //});
     }
 
     //idea自带
@@ -376,6 +398,7 @@ public class MyCodeCompareDialog extends DialogWrapper {
             // 使用diff-match-patch计算差异
             diff_match_patch dmp = new diff_match_patch();
             LinkedList<diff_match_patch.Diff> diffs = dmp.diff_main(leftText, rightText);
+            dmp.Diff_Timeout = 1.0f;
             dmp.diff_cleanupSemantic(diffs);
 
             SwingUtilities.invokeLater(() -> {

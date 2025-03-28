@@ -2,6 +2,7 @@ plugins {
     id("java")
     id("org.jetbrains.kotlin.jvm") version "1.9.21"
     id("org.jetbrains.intellij") version "1.16.1"
+    id("com.github.sherter.google-java-format") version "0.9"
 }
 
 group = "com.example"
@@ -35,6 +36,7 @@ dependencies {
     implementation("org.jetbrains:annotations:24.0.1")
     implementation("com.fifesoft:rsyntaxtextarea:3.3.0") // 可选，用于更好的语法高亮
     implementation("io.github.java-diff-utils:java-diff-utils:4.12")
+    implementation("com.google.googlejavaformat:google-java-format:1.11.0")
 
 }
 
