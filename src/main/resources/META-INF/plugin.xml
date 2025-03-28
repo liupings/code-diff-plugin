@@ -37,7 +37,17 @@
             <add-to-group group-id="EditorPopupMenu" anchor="first"/>
             <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt U"/>
         </action>-->
-        <action id="CodeCompareAction" class="com.rj.diff.dialog2.ShowCodeCompareAction" text="代码对比" description="对比本地和远程代码">
+        <action id="CodeCompareAction" class="com.rj.diff.dialog2.ShowCodeCompareAction" text="代码对比 idea自带对比" description="对比本地和远程代码">
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+        </action>
+
+        <action id="CodeCompareActionaaa" class="com.rj.diff.dialog_test.CodeCompareAction" text="代码对比 算法对比" description="对比本地和远程代码">
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+        </action>
+
+        <action id="CodeCompareActionaaabbb" class="com.rj.diff.mydialog.MyCodeCompareAction" text="代码对比 优化版" description="对比本地和远程代码">
             <add-to-group group-id="EditorPopupMenu" anchor="last"/>
             <add-to-group group-id="ToolsMenu" anchor="last"/>
         </action>
