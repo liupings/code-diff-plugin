@@ -10,6 +10,7 @@ import com.intellij.ide.highlighter.JavaFileType;
 import com.intellij.ide.ui.LafManager;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.colors.EditorColorsManager;
 import com.intellij.openapi.editor.colors.EditorFontType;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
@@ -265,7 +266,7 @@ public class MyCodeCompareDialog extends DialogWrapper {
             return;
         }
 
-        new Thread(() -> {
+        ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
                 String remoteCode = HttpUtil.get(url);
                 SwingUtilities.invokeLater(() -> {
@@ -278,7 +279,7 @@ public class MyCodeCompareDialog extends DialogWrapper {
                                 "获取远程代码失败: " + ex.getMessage(),
                                 "错误", JOptionPane.ERROR_MESSAGE));
             }
-        }).start();
+        });
     }
 
     //idea自带
