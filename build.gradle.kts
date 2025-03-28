@@ -25,6 +25,8 @@ intellij {
     updateSinceUntilBuild.set(false) // 关闭构建范围检查
     localPath.set("C:\\Users\\Administrator\\.gradle\\caches\\modules-2\\files-2.1\\com.jetbrains.intellij.idea\\ideaIC\\2023.3.8\\bfbaf3e3e0fded07b36765dd8ac98c3901d3e106")
     plugins.set(listOf("java", "org.jetbrains.kotlin"))  // 加载依赖插件
+    plugins = listOf("java")
+
 }
 dependencies {
     implementation("io.github.java-diff-utils:java-diff-utils:4.12")

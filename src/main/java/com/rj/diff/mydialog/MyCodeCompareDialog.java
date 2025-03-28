@@ -6,6 +6,7 @@ import com.intellij.diff.*;
 import com.intellij.diff.contents.DiffContent;
 import com.intellij.diff.requests.DiffRequest;
 import com.intellij.diff.requests.SimpleDiffRequest;
+import com.intellij.ide.highlighter.JavaFileType;
 import com.intellij.ide.ui.LafManager;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
@@ -292,8 +293,8 @@ public class MyCodeCompareDialog extends DialogWrapper {
         DiffContentFactory contentFactory = DiffContentFactory.getInstance();
 
         // 创建 DiffContent 实例
-        DiffContent currentContent = contentFactory.create(project, currentText, fileType);
-        DiffContent remoteContent = contentFactory.create(project, remoteText, fileType);
+        DiffContent currentContent = contentFactory.create(project, currentText, JavaFileType.INSTANCE);
+        DiffContent remoteContent = contentFactory.create(project, remoteText, JavaFileType.INSTANCE);
 
         // 创建 SimpleDiffRequest
         SimpleDiffRequest request = new SimpleDiffRequest(
