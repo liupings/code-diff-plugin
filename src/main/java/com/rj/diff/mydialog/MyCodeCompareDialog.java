@@ -291,22 +291,23 @@ public class MyCodeCompareDialog extends DialogWrapper {
         FileType fileType = FileTypeManager.getInstance().getFileTypeByFile(currentFile);
         DiffContentFactory contentFactory = DiffContentFactory.getInstance();
 
-        // 修改这里：使用左侧文本区域的内容创建DiffContent
+        // 创建 DiffContent 实例
         DiffContent currentContent = contentFactory.create(project, currentText, fileType);
         DiffContent remoteContent = contentFactory.create(project, remoteText, fileType);
 
-        // 创建标准的 DiffRequest
+        // 创建 SimpleDiffRequest
         SimpleDiffRequest request = new SimpleDiffRequest(
-                "代码对比",
-                currentContent,
-                remoteContent,
-                "当前代码",
-                "远程代码"
+                "代码对比",               // 对比窗口的标题
+                currentContent,           // 左侧（当前代码）
+                remoteContent,            // 右侧（远程代码）
+                "当前代码",               // 左侧的标题
+                "远程代码"                // 右侧的标题
         );
 
-        // 显示差异对比
+        // 确保显示对比界面
         DiffManager.getInstance().showDiff(project, request);
     }
+
 
     private void highlightDifferences(List<diff_match_patch.Diff> diffs) {
         try {
