@@ -88,6 +88,7 @@ public class MyCodeCompareDialog extends DialogWrapper {
         urlTextField = new JTextField(30);
         //languageComboBox = new ComboBox<>(new String[]{"Java", "Kotlin", "Python", "JavaScript", "HTML", "XML", "SQL", "JSON"});
         languageComboBox = new ComboBox<>(new String[]{"Java"});
+        languageComboBox.setVisible(Boolean.FALSE);
 
         // 设置高亮颜色
         addedPainter = new DefaultHighlighter.DefaultHighlightPainter(new Color(144, 238, 144, 100));
@@ -97,6 +98,7 @@ public class MyCodeCompareDialog extends DialogWrapper {
         setupListeners();
         loadPreferences();
     }
+
     private void updateLeftTextArea(String newContent) {
         SwingUtilities.invokeLater(() -> {
             // 保存当前状态
@@ -130,6 +132,7 @@ public class MyCodeCompareDialog extends DialogWrapper {
         // 移除剪贴板监听
         super.dispose();
     }
+
     private RSyntaxTextArea createSyntaxTextArea() {
         RSyntaxTextArea textArea = new RSyntaxTextArea();
         textArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JAVA);
@@ -147,8 +150,7 @@ public class MyCodeCompareDialog extends DialogWrapper {
             // boolean isDarkTheme = "Darcula".equals(LafManager.getInstance().getCurrentTheme().getName());
 
             if (isDarkTheme) {
-                Theme theme = Theme.load(getClass().getResourceAsStream(
-                        "/org/fife/ui/rsyntaxtextarea/themes/dark.xml"));
+                Theme theme = Theme.load(getClass().getResourceAsStream("/org/fife/ui/rsyntaxtextarea/themes/dark.xml"));
                 theme.apply(textArea);
             }
         } catch (IOException e) {
@@ -168,7 +170,7 @@ public class MyCodeCompareDialog extends DialogWrapper {
         controlPanel.add(new JLabel("URL:"));
         controlPanel.add(urlTextField);
         controlPanel.add(fetchButton);
-        controlPanel.add(new JLabel("语言:"));
+        //controlPanel.add(new JLabel("语言:"));
         controlPanel.add(languageComboBox);
         controlPanel.add(compareButton);
 
@@ -370,6 +372,7 @@ public class MyCodeCompareDialog extends DialogWrapper {
             });
         }).start();
     }
+
     private void highlightDifferences(List<diff_match_patch.Diff> diffs) {
         try {
             int leftPos = 0;
