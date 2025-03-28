@@ -73,7 +73,7 @@ public class MyCodeCompareDialog extends DialogWrapper {
         applyAllButton = new JButton("全部应用");
         applySelectedButton = new JButton("应用选中");
         saveButton = new JButton("保存到源文件");
-        urlTextField = new JTextField("http://172.16.1.11/api/table-info/api/getSqlByTable/59",30);
+        urlTextField = new JTextField(30);
         //languageComboBox = new ComboBox<>(new String[]{"Java", "Kotlin", "Python", "JavaScript", "HTML", "XML", "SQL", "JSON"});
         languageComboBox = new ComboBox<>(new String[]{"Java"});
         languageComboBox.setVisible(Boolean.FALSE);
@@ -85,6 +85,8 @@ public class MyCodeCompareDialog extends DialogWrapper {
         init();
         setupListeners();
         loadPreferences();
+
+        urlTextField.setText("http://172.16.1.11/api/table-info/api/getSqlByTable/59");
     }
 
     private void updateLeftTextArea(String newContent) {
