@@ -463,6 +463,7 @@ public class MyCodeCompareDialog extends DialogWrapper {
         // 获取用户在 rightTextArea 选中的文本
         String selectedText = rightTextArea.getSelectedText();
         if (selectedText == null || selectedText.isEmpty()) {
+            CodeDiffNotifications.showInfo(project, "提示", "请选择代码");
             return;
         }
 
