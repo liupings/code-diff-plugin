@@ -25,6 +25,7 @@ import com.intellij.ui.components.JBScrollPane;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rsyntaxtextarea.Theme;
+import org.fife.ui.rtextarea.RTextScrollPane;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -173,8 +174,38 @@ public class MyCodeCompareDialog extends DialogWrapper {
 
         // 代码对比面板
         JPanel codePanel = new JPanel(new GridLayout(1, 2, 10, 10));
-        codePanel.add(createTextAreaPanel("当前代码", leftTextArea));
-        codePanel.add(createTextAreaPanel("远程代码", rightTextArea));
+        //codePanel.add(createTextAreaPanel("当前代码", leftTextArea));
+        //codePanel.add(createTextAreaPanel("远程代码", rightTextArea));
+
+        RTextScrollPane currentCode = new RTextScrollPane(createTextAreaPanel("当前代码", leftTextArea));
+        RTextScrollPane rightCode = new RTextScrollPane(createTextAreaPanel("远程代码", rightTextArea));
+        codePanel.add(currentCode);
+        codePanel.add(rightCode);
+
+        JScrollBar leftScrollBar = currentCode.getVerticalScrollBar();
+        JScrollBar rightScrollBar = rightCode.getVerticalScrollBar();
+
+        // 设置滚动步长（值可以调整）
+        int unitIncrement = 30;  // 单位增量，控制鼠标滚轮滚动速度
+        int blockIncrement = 100; // 块增量，控制 PgUp/PgDn 速度
+
+        leftScrollBar.setUnitIncrement(unitIncrement);
+        rightScrollBar.setUnitIncrement(unitIncrement);
+        leftScrollBar.setBlockIncrement(blockIncrement);
+        rightScrollBar.setBlockIncrement(blockIncrement);
+
+        // 添加同步监听
+        leftScrollBar.addAdjustmentListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                rightScrollBar.setValue(e.getValue());
+            }
+        });
+
+        rightScrollBar.addAdjustmentListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                leftScrollBar.setValue(e.getValue());
+            }
+        });
 
         mainPanel.add(controlPanel, BorderLayout.NORTH);
         mainPanel.add(codePanel, BorderLayout.CENTER);
