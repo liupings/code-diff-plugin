@@ -247,7 +247,8 @@ public class MyCodeCompareDialog extends DialogWrapper {
 
     private JPanel createTextAreaPanel(String title, RSyntaxTextArea textArea) {
         JPanel panel = new JPanel(new BorderLayout());
-        panel.setBorder(BorderFactory.createTitledBorder(title));
+        //panel.setBorder(BorderFactory.createTitledBorder(title));
+        panel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(),title));
         JBScrollPane scrollPane = new JBScrollPane(textArea);
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
         panel.add(scrollPane, BorderLayout.CENTER);
