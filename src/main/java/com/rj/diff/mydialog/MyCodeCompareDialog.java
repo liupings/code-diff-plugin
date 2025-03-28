@@ -39,6 +39,7 @@ import java.awt.event.ActionEvent;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.prefs.Preferences;
 
@@ -280,36 +281,63 @@ public class MyCodeCompareDialog extends DialogWrapper {
         }).start();
     }
 
-    private void compareCode(ActionEvent e) {
-        String currentText = leftTextArea.getText();
-        String remoteText = rightTextArea.getText();
+    //idea自带
+    //private void compareCode(ActionEvent e) {
+    //    String currentText = leftTextArea.getText();
+    //    String remoteText = rightTextArea.getText();
+    //
+    //    if (remoteText == null || remoteText.isEmpty()) {
+    //        JOptionPane.showMessageDialog(mainPanel, "请先获取远程代码", "错误", JOptionPane.ERROR_MESSAGE);
+    //        return;
+    //    }
+    //
+    //    FileType fileType = FileTypeManager.getInstance().getFileTypeByFile(currentFile);
+    //    DiffContentFactory contentFactory = DiffContentFactory.getInstance();
+    //
+    //    // 创建 DiffContent 实例
+    //    DiffContent currentContent = contentFactory.create(project, currentText, JavaFileType.INSTANCE);
+    //    DiffContent remoteContent = contentFactory.create(project, remoteText, JavaFileType.INSTANCE);
+    //
+    //    // 创建 SimpleDiffRequest
+    //    SimpleDiffRequest request = new SimpleDiffRequest(
+    //            "代码对比",               // 对比窗口的标题
+    //            currentContent,           // 左侧（当前代码）
+    //            remoteContent,            // 右侧（远程代码）
+    //            "当前代码",               // 左侧的标题
+    //            "远程代码"                // 右侧的标题
+    //    );
+    //
+    //    // 确保显示对比界面
+    //    DiffManager.getInstance().showDiff(project, request);
+    //}
 
-        if (remoteText == null || remoteText.isEmpty()) {
-            JOptionPane.showMessageDialog(mainPanel, "请先获取远程代码", "错误", JOptionPane.ERROR_MESSAGE);
+    //算法对比
+    private void compareCode(ActionEvent e) {
+        String leftText = leftTextArea.getText();
+        String rightText = rightTextArea.getText();
+
+        if (leftText.isEmpty() || rightText.isEmpty()) {
+            JOptionPane.showMessageDialog(getWindow(),
+                    "两侧代码都不能为空", "错误", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-        FileType fileType = FileTypeManager.getInstance().getFileTypeByFile(currentFile);
-        DiffContentFactory contentFactory = DiffContentFactory.getInstance();
+        new Thread(() -> {
+            // 使用diff-match-patch计算差异
+            diff_match_patch dmp = new diff_match_patch();
+            LinkedList<diff_match_patch.Diff> diffs = dmp.diff_main(leftText, rightText);
+            dmp.diff_cleanupSemantic(diffs);
 
-        // 创建 DiffContent 实例
-        DiffContent currentContent = contentFactory.create(project, currentText, JavaFileType.INSTANCE);
-        DiffContent remoteContent = contentFactory.create(project, remoteText, JavaFileType.INSTANCE);
+            SwingUtilities.invokeLater(() -> {
+                // 清除之前的高亮
+                leftTextArea.getHighlighter().removeAllHighlights();
+                rightTextArea.getHighlighter().removeAllHighlights();
 
-        // 创建 SimpleDiffRequest
-        SimpleDiffRequest request = new SimpleDiffRequest(
-                "代码对比",               // 对比窗口的标题
-                currentContent,           // 左侧（当前代码）
-                remoteContent,            // 右侧（远程代码）
-                "当前代码",               // 左侧的标题
-                "远程代码"                // 右侧的标题
-        );
-
-        // 确保显示对比界面
-        DiffManager.getInstance().showDiff(project, request);
+                // 应用高亮显示差异
+                highlightDifferences(diffs);
+            });
+        }).start();
     }
-
-
     private void highlightDifferences(List<diff_match_patch.Diff> diffs) {
         try {
             int leftPos = 0;
