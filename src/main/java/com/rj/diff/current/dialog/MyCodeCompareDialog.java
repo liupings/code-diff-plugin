@@ -456,28 +456,34 @@ public class MyCodeCompareDialog extends DialogWrapper {
     }
 
     private void applySelectedChanges(ActionEvent e) {
+        // 获取用户在 rightTextArea 选中的文本
         String selectedText = rightTextArea.getSelectedText();
         if (selectedText == null || selectedText.isEmpty()) {
-            //JOptionPane.showMessageDialog(getWindow(), "请先在右侧选择要应用的代码", "提示", JOptionPane.INFORMATION_MESSAGE);
-            CodeDiffNotifications.showWarning(project, "警告", "请先在右侧选择要应用的代码");
             return;
         }
 
+        // 获取 rightTextArea 选中部分的起始偏移量
+        int startOffset = rightTextArea.getSelectionStart();
+
         try {
-            int leftSelectionStart = leftTextArea.getSelectionStart();
-            int leftSelectionEnd = leftTextArea.getSelectionEnd();
+            // 计算选中部分的起始行号
+            int rightLineNumber = rightTextArea.getLineOfOffset(startOffset);
 
-            if (leftSelectionStart == leftSelectionEnd) {
-                // 如果没有选择左侧文本，则在光标处插入
-                leftTextArea.insert(selectedText, leftTextArea.getCaretPosition());
+            // 计算 leftTextArea 的总行数
+            int leftTotalLines = leftTextArea.getLineCount();
+
+            if (rightLineNumber < leftTotalLines) {
+                // leftTextArea 行数足够，获取该行的起始偏移量
+                int leftLineStartOffset = leftTextArea.getLineStartOffset(rightLineNumber);
+                // 在该行插入 selectedText
+                leftTextArea.insert(selectedText + "\n", leftLineStartOffset);
             } else {
-                // 替换选中的左侧文本
-                leftTextArea.replaceSelection(selectedText);
+                // leftTextArea 行数不足，在光标位置插入
+                int caretPos = leftTextArea.getCaretPosition();
+                leftTextArea.insert(selectedText + "\n", caretPos);
             }
-        } catch (Exception ex) {
-            //JOptionPane.showMessageDialog(getWindow(), "应用选中代码失败: " + ex.getMessage(), "错误", JOptionPane.ERROR_MESSAGE);
-            CodeDiffNotifications.showWarning(project, "警告", "应用选中代码失败");
-
+        } catch (BadLocationException e1) {
+            e1.printStackTrace();
         }
     }
 
