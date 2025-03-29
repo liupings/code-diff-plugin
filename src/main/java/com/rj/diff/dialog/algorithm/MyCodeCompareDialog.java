@@ -1,12 +1,8 @@
-package com.rj.diff.current.dialog;
+package com.rj.diff.dialog.algorithm;
 
-import cn.hutool.core.stream.StreamUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.HttpUtil;
-import com.google.googlejavaformat.java.Formatter;
-import com.google.googlejavaformat.java.FormatterException;
 import com.intellij.ide.ui.LafManager;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.colors.EditorColorsManager;
 import com.intellij.openapi.editor.colors.EditorFontType;
 import com.intellij.openapi.fileEditor.FileDocumentManager;

@@ -32,18 +32,7 @@
     <!--        </component>-->
     <!--    </application-components>-->
     <actions>
-
-        <!--<action id="CodeCompareAction" class="com.rj.diff.dialog2.ShowCodeCompareAction" text="代码对比 idea自带对比" description="对比本地和远程代码">
-            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
-            <add-to-group group-id="ToolsMenu" anchor="last"/>
-        </action>
-
-        <action id="CodeCompareActionaaa" class="com.rj.diff.dialog_test.CodeCompareAction" text="代码对比 算法对比" description="对比本地和远程代码">
-            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
-            <add-to-group group-id="ToolsMenu" anchor="last"/>
-        </action>-->
-
-        <action id="MyCodeCompareAction" class="com.rj.diff.current.dialog.MyCodeCompareAction" text="从快速开发平台更新代码" description="对比本地和远程代码">
+        <action id="MyCodeCompareAction" class="com.rj.diff.dialog.algorithm.MyCodeCompareAction" text="从快速开发平台更新代码" description="对比本地和远程代码">
             <add-to-group group-id="EditorPopupMenu" anchor="first"/>
             <add-to-group group-id="ToolsMenu" anchor="last"/>
         </action>
