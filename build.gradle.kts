@@ -37,7 +37,9 @@ dependencies {
     implementation("com.fifesoft:rsyntaxtextarea:3.3.0") // 可选，用于更好的语法高亮
     implementation("io.github.java-diff-utils:java-diff-utils:4.12")
     implementation("com.google.googlejavaformat:google-java-format:1.11.0")
-
+    implementation("com.github.javaparser:javaparser-core:3.25.4")
+//    implementation("org.projectlombok:lombok:1.18.30")
+//    annotationProcessor("org.projectlombok:lombok:1.18.30") // 必须加上这个，否则注解不会生效
 }
 
 java {
@@ -45,6 +47,11 @@ java {
         languageVersion.set(JavaLanguageVersion.of(17))
     }
 }
+
+tasks.withType<JavaExec> {
+    jvmArgs = listOf("-Xmx512m", "-Dfile.encoding=UTF-8", "-Dsun.stdout.encoding=UTF-8", "-Dsun.stderr.encoding=UTF-8")
+}
+
 
 tasks {
     // Set the JVM compatibility versions
