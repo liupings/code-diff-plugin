@@ -1,4 +1,4 @@
-package com.rj.diff.algorithm;
+package com.rj.diff.test;
 
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;

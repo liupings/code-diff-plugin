@@ -1,4 +1,4 @@
-package com.rj.diff.algorithm;
+package com.rj.diff.test;
 
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.HttpUtil;
