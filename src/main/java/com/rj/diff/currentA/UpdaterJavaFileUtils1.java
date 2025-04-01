@@ -17,9 +17,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class UpdaterJavaFileUtilsCurrent {
+public class UpdaterJavaFileUtils1 {
 
-    private static Log log = LogFactory.get(com.rj.diff.current.UpdaterJavaFileUtils1.class);
+    private static Log log = LogFactory.get(UpdaterJavaFileUtils1.class);
 
     public static void updateControllerWithDifferences(Path sourceAPath, Path sourceBPath, Path targetPath) throws IOException, FormatterException, InterruptedException {
         // 读取文件内容
