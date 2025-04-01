@@ -90,35 +90,37 @@ public class ControllerDiffUpdaterTest {
     }
 
     private static void processMethodAnnotations(MethodDeclaration aMethod, MethodDeclaration bMethod) {
-        // 处理普通注解
-        List<AnnotationExpr> regularAnnotations = bMethod.getAnnotations().stream()
-                .filter(bAnnotation -> !bAnnotation.getNameAsString().equals("Parameters"))
-                .filter(bAnnotation -> aMethod.getAnnotations().stream()
-                        .noneMatch(aAnnotation -> annotationsEqual(aAnnotation, bAnnotation)))
-                .collect(Collectors.toList());
-
-        // 处理Parameters注解的特殊合并逻辑
+        // 1. 先处理 Parameters 注解（确保它排在第一位）
         Optional<AnnotationExpr> aParametersOpt = aMethod.getAnnotationByName("Parameters");
         Optional<AnnotationExpr> bParametersOpt = bMethod.getAnnotationByName("Parameters");
 
-        if (bParametersOpt.isPresent()) {
-            if (aParametersOpt.isPresent()) {
-                // 合并两个Parameters注解
-                AnnotationExpr mergedParameters = mergeParametersAnnotations(
-                        aParametersOpt.get(),
-                        bParametersOpt.get());
+        // 临时存储所有注解（先移除 Parameters）
+        List<AnnotationExpr> allAnnotations = new ArrayList<>(aMethod.getAnnotations());
+        allAnnotations.removeIf(a -> a.getNameAsString().equals("Parameters"));
 
-                // 移除旧的，添加合并后的
-                aMethod.getAnnotations().removeIf(a -> a.getNameAsString().equals("Parameters"));
-                aMethod.addAnnotation(mergedParameters);
+        if (bParametersOpt.isPresent()) {
+            AnnotationExpr mergedParameters;
+            if (aParametersOpt.isPresent()) {
+                // 合并两个 Parameters 注解
+                mergedParameters = mergeParametersAnnotations(aParametersOpt.get(), bParametersOpt.get());
             } else {
-                // A方法没有Parameters注解，直接添加B方法的
-                aMethod.addAnnotation(bParametersOpt.get().clone());
+                // 直接使用 B 的 Parameters 注解
+                mergedParameters = bParametersOpt.get().clone();
             }
+            // 插入到第一位
+            allAnnotations.add(0, mergedParameters);
         }
 
-        // 添加其他普通注解
-        regularAnnotations.forEach(aMethod::addAnnotation);
+        // 2. 处理其他普通注解（不包含 Parameters）
+        bMethod.getAnnotations().stream()
+                .filter(bAnnotation -> !bAnnotation.getNameAsString().equals("Parameters"))
+                .filter(bAnnotation -> aMethod.getAnnotations().stream()
+                        .noneMatch(aAnnotation -> annotationsEqual(aAnnotation, bAnnotation)))
+                .forEach(allAnnotations::add);
+
+        // 清空原注解，并按新顺序重新添加
+        aMethod.getAnnotations().clear();
+        allAnnotations.forEach(aMethod::addAnnotation);
     }
 
     private static AnnotationExpr mergeParametersAnnotations(AnnotationExpr aParams, AnnotationExpr bParams) {
