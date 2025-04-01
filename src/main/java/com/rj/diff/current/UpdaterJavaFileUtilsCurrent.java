@@ -1,10 +1,14 @@
-package com.rj.diff.test;
+package com.rj.diff.current;
 
+import cn.hutool.log.Log;
+import cn.hutool.log.LogFactory;
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.*;
 import com.github.javaparser.ast.expr.*;
+import com.github.javaparser.ast.stmt.BlockStmt;
 import com.google.googlejavaformat.java.FormatterException;
+import groovy.util.logging.Slf4j;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -14,7 +18,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class ControllerDiffUpdaterTest {
+public class UpdaterJavaFileUtilsCurrent {
+
+    private static Log log = LogFactory.get(UpdaterJavaFileUtilsCurrent.class);
 
     public static void updateControllerWithDifferences(Path sourceAPath, Path sourceBPath, Path targetPath) throws IOException, FormatterException, InterruptedException {
         // 读取文件内容
@@ -43,6 +49,31 @@ public class ControllerDiffUpdaterTest {
         saveUpdatedClass(aCu, targetPath);
     }
 
+    public static String updateControllerWithDifferencesStr(String sourceJavaInfo, String targetJavaInfo) {
+        // 解析两个类
+        JavaParser javaParser = new JavaParser();
+        CompilationUnit aCu = javaParser.parse(sourceJavaInfo).getResult().get();
+        CompilationUnit bCu = javaParser.parse(targetJavaInfo).getResult().get();
+
+        // 获取两个类的声明
+        ClassOrInterfaceDeclaration aClass = aCu.findFirst(ClassOrInterfaceDeclaration.class).orElseThrow(() -> new RuntimeException("在文件中找不到类"));
+        ClassOrInterfaceDeclaration bClass = bCu.findFirst(ClassOrInterfaceDeclaration.class).orElseThrow(() -> new RuntimeException("在文件中找不到类"));
+
+        // 1. 处理类级别的注解差异
+        processClassAnnotations(aClass, bClass);
+
+        // 2. 找出方法差异并应用到A类
+        processMethodDifferences(aClass, bClass);
+
+        // 3. 找出字段差异并应用到A类
+        processFieldDifferences(aClass, bClass);
+
+        String format = JavaFormatterUtils.format(aCu.toString());
+
+        log.info("AST解析并覆盖目标完成....{}", format.length());
+        return format;
+    }
+
     // ========== 类注解处理 ==========
     private static void processClassAnnotations(ClassOrInterfaceDeclaration aClass, ClassOrInterfaceDeclaration bClass) {
         // 获取B类中A类没有的注解
@@ -69,8 +100,15 @@ public class ControllerDiffUpdaterTest {
             if (aMethodOpt.isPresent()) {
                 // 方法已存在，处理参数和注解差异
                 MethodDeclaration aMethod = aMethodOpt.get();
+                //备份原方法体
+                BlockStmt originalBody = aMethod.getBody().orElse(null);
+                //更新方法签名和注解（此时方法体会被bMethod覆盖）
                 processMethodParameters(aMethod, bMethod);
                 processMethodAnnotations(aMethod, bMethod);
+                //恢复原方法体
+                if (originalBody != null) {
+                    aMethod.setBody(originalBody);
+                }
             } else {
                 // 方法不存在，直接添加整个方法
                 aClass.addMember(bMethod.clone());
@@ -295,7 +333,7 @@ public class ControllerDiffUpdaterTest {
         return false;
     }
 
-    private static void saveUpdatedClass(CompilationUnit cu, Path targetPath) throws IOException, InterruptedException {
+    private static void saveUpdatedClass(CompilationUnit cu, Path targetPath) throws IOException {
         Files.createDirectories(targetPath.getParent());
         String format = JavaFormatterUtils.format(cu.toString());
         Files.write(targetPath, format.getBytes());

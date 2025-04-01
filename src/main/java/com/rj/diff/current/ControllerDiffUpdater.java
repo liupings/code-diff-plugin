@@ -1,4 +1,4 @@
-package com.rj.diff.test;
+package com.rj.diff.current;
 
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ast.CompilationUnit;

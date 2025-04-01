@@ -1,4 +1,4 @@
-package com.rj.diff.test;
+package com.rj.diff.current;
 
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.HttpUtil;
@@ -36,7 +36,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.prefs.Preferences;
 
-public class MyCodeCompareDialog_test extends DialogWrapper {
+public class MyCodeCompareDialogCurrent extends DialogWrapper {
     private final RSyntaxTextArea leftTextArea;
     private final RSyntaxTextArea rightTextArea;
     private final JButton fetchButton;
@@ -56,7 +56,7 @@ public class MyCodeCompareDialog_test extends DialogWrapper {
     private boolean isAdjusting = false;
 
 
-    public MyCodeCompareDialog_test(@Nullable Project project, String sourceCode, Path sourceFilePath, VirtualFile currentFile) {
+    public MyCodeCompareDialogCurrent(@Nullable Project project, String sourceCode, Path sourceFilePath, VirtualFile currentFile) {
         super(project, true);
         // 设置对话框初始大小
         setSize(1500, 800);
@@ -405,7 +405,10 @@ public class MyCodeCompareDialog_test extends DialogWrapper {
             CodeDiffNotifications.showError(project, "错误", "没有获取到远程内容");
             return;
         }
-        leftTextArea.setText(rightTextArea.getText());
+        //leftTextArea.setText(rightTextArea.getText());
+        String reslutJava = UpdaterJavaFileUtilsCurrent.updateControllerWithDifferencesStr(rightTextArea.getText(), leftTextArea.getText());
+        leftTextArea.setText(reslutJava);
+        compareCode(null);
     }
 
     private void applySelectedChanges(ActionEvent e) {
@@ -480,13 +483,13 @@ public class MyCodeCompareDialog_test extends DialogWrapper {
     }
 
     private void savePreferences() {
-        Preferences prefs = Preferences.userNodeForPackage(MyCodeCompareDialog_test.class);
+        Preferences prefs = Preferences.userNodeForPackage(MyCodeCompareDialogCurrent.class);
         prefs.put("lastUrl", urlTextField.getText());
         prefs.put("lastLanguage", (String) languageComboBox.getSelectedItem());
     }
 
     private void loadPreferences() {
-        Preferences prefs = Preferences.userNodeForPackage(MyCodeCompareDialog_test.class);
+        Preferences prefs = Preferences.userNodeForPackage(MyCodeCompareDialogCurrent.class);
         urlTextField.setText(prefs.get("lastUrl", ""));
         String lastLanguage = prefs.get("lastLanguage", "Java");
         languageComboBox.setSelectedItem(lastLanguage);
