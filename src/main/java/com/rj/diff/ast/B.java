@@ -9,7 +9,7 @@ public class B {
     private String name;
     private String address;
 
-    public static void aaa(){
+    public static void aaa(int aaaParams){
 
     }
 }

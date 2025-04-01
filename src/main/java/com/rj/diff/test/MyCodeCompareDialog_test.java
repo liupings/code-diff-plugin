@@ -36,7 +36,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.prefs.Preferences;
 
-public class MyCodeCompareDialog extends DialogWrapper {
+public class MyCodeCompareDialog_test extends DialogWrapper {
     private final RSyntaxTextArea leftTextArea;
     private final RSyntaxTextArea rightTextArea;
     private final JButton fetchButton;
@@ -56,7 +56,7 @@ public class MyCodeCompareDialog extends DialogWrapper {
     private boolean isAdjusting = false;
 
 
-    public MyCodeCompareDialog(@Nullable Project project, String sourceCode, Path sourceFilePath, VirtualFile currentFile) {
+    public MyCodeCompareDialog_test(@Nullable Project project, String sourceCode, Path sourceFilePath, VirtualFile currentFile) {
         super(project, true);
         // 设置对话框初始大小
         setSize(1500, 800);
@@ -92,7 +92,7 @@ public class MyCodeCompareDialog extends DialogWrapper {
         setupListeners();
         loadPreferences();
 
-        urlTextField.setText("http://172.16.1.11/api/table-info/api/getSqlByTable/59");
+        urlTextField.setText("http://172.16.1.11/api/interface-definition/api/generator/javaBasedByClassName/" + currentFile.getName());
     }
 
     private void updateLeftTextArea(String newContent) {
@@ -156,7 +156,7 @@ public class MyCodeCompareDialog extends DialogWrapper {
 
             textArea.setBackground(new Color(43, 43, 43));
             textArea.setSelectionColor(new Color(59, 117, 231));
-            textArea.setMargin(new Insets(0,3,0,0));
+            textArea.setMargin(new Insets(0, 3, 0, 0));
             textArea.setCaretColor(Color.WHITE); // 设置光标颜色
 
         } catch (IOException e) {
@@ -248,7 +248,7 @@ public class MyCodeCompareDialog extends DialogWrapper {
     private JPanel createTextAreaPanel(String title, RSyntaxTextArea textArea) {
         JPanel panel = new JPanel(new BorderLayout());
         //panel.setBorder(BorderFactory.createTitledBorder(title));
-        panel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(),title));
+        panel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), title));
         JBScrollPane scrollPane = new JBScrollPane(textArea);
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
         panel.add(scrollPane, BorderLayout.CENTER);
@@ -337,55 +337,7 @@ public class MyCodeCompareDialog extends DialogWrapper {
                     fetchButton.setEnabled(true);
                     return null;
                 });
-        //ApplicationManager.getApplication().executeOnPooledThread(() -> {
-        //    try {
-        //        String remoteCode = HttpUtil.get(url);
-        //        SwingUtilities.invokeLater(() -> {
-        //            rightTextArea.setText(remoteCode);
-        //            savePreferences();
-        //            // 自动触发代码对比
-        //            compareCode(null);
-        //        });
-        //    } catch (Exception ex) {
-        //        SwingUtilities.invokeLater(() ->
-        //                //JOptionPane.showMessageDialog(getWindow(), "获取远程代码失败: " + ex.getMessage(), "错误", JOptionPane.ERROR_MESSAGE)
-        //                CodeDiffNotifications.showError(project, "错误", "获取远程代码失败")
-        //
-        //        );
-        //
-        //    }
-        //});
     }
-
-    //idea自带
-    //private void compareCode(ActionEvent e) {
-    //    String currentText = leftTextArea.getText();
-    //    String remoteText = rightTextArea.getText();
-    //
-    //    if (remoteText == null || remoteText.isEmpty()) {
-    //        JOptionPane.showMessageDialog(mainPanel, "请先获取远程代码", "错误", JOptionPane.ERROR_MESSAGE);
-    //        return;
-    //    }
-    //
-    //    FileType fileType = FileTypeManager.getInstance().getFileTypeByFile(currentFile);
-    //    DiffContentFactory contentFactory = DiffContentFactory.getInstance();
-    //
-    //    // 创建 DiffContent 实例
-    //    DiffContent currentContent = contentFactory.create(project, currentText, JavaFileType.INSTANCE);
-    //    DiffContent remoteContent = contentFactory.create(project, remoteText, JavaFileType.INSTANCE);
-    //
-    //    // 创建 SimpleDiffRequest
-    //    SimpleDiffRequest request = new SimpleDiffRequest(
-    //            "代码对比",               // 对比窗口的标题
-    //            currentContent,           // 左侧（当前代码）
-    //            remoteContent,            // 右侧（远程代码）
-    //            "当前代码",               // 左侧的标题
-    //            "远程代码"                // 右侧的标题
-    //    );
-    //
-    //    // 确保显示对比界面
-    //    DiffManager.getInstance().showDiff(project, request);
-    //}
 
     //算法对比
     private void compareCode(ActionEvent e) {
@@ -528,13 +480,13 @@ public class MyCodeCompareDialog extends DialogWrapper {
     }
 
     private void savePreferences() {
-        Preferences prefs = Preferences.userNodeForPackage(MyCodeCompareDialog.class);
+        Preferences prefs = Preferences.userNodeForPackage(MyCodeCompareDialog_test.class);
         prefs.put("lastUrl", urlTextField.getText());
         prefs.put("lastLanguage", (String) languageComboBox.getSelectedItem());
     }
 
     private void loadPreferences() {
-        Preferences prefs = Preferences.userNodeForPackage(MyCodeCompareDialog.class);
+        Preferences prefs = Preferences.userNodeForPackage(MyCodeCompareDialog_test.class);
         urlTextField.setText(prefs.get("lastUrl", ""));
         String lastLanguage = prefs.get("lastLanguage", "Java");
         languageComboBox.setSelectedItem(lastLanguage);

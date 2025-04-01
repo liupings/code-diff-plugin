@@ -1,9 +1,16 @@
+import org.jetbrains.kotlin.builtins.StandardNames.FqNames.target
+import org.jetbrains.kotlin.js.inline.clean.removeUnusedImports
+
 plugins {
     id("java")
     id("org.jetbrains.kotlin.jvm") version "1.9.21"
     id("org.jetbrains.intellij") version "1.16.1"
-    id("com.github.sherter.google-java-format") version "0.9"
+    id("com.diffplug.spotless") version "6.22.0"
+//    id("com.github.sherter.google-java-format") version "0.9"
 }
+//googleJavaFormat {
+//    toolVersion = "1.25.0"
+//}
 
 group = "com.example"
 version = "1.0-SNAPSHOT"
@@ -30,14 +37,15 @@ intellij {
 
 }
 dependencies {
-    implementation("io.github.java-diff-utils:java-diff-utils:4.12")
-    implementation("org.jetbrains.kotlin:kotlin-reflect:1.9.21") // 添加反射支持
-    implementation("cn.hutool:hutool-all:5.8.16") // 添加反射支持
+//    implementation("io.github.java-diff-utils:java-diff-utils:4.12")
+//    implementation("org.jetbrains.kotlin:kotlin-reflect:1.9.21") // 添加反射支持
+    implementation("cn.hutool:hutool-all:5.8.16")
     implementation("org.jetbrains:annotations:24.0.1")
-    implementation("com.fifesoft:rsyntaxtextarea:3.3.0") // 可选，用于更好的语法高亮
+    implementation("com.fifesoft:rsyntaxtextarea:3.3.0") //  语法高亮
     implementation("io.github.java-diff-utils:java-diff-utils:4.12")
-    implementation("com.google.googlejavaformat:google-java-format:1.11.0")
-    implementation("com.github.javaparser:javaparser-core:3.25.4")
+    implementation("com.google.googlejavaformat:google-java-format:1.17.0")
+    implementation("com.github.javaparser:javaparser-core:3.26.3")
+    implementation("com.github.javaparser:javaparser-core-serialization:3.26.3")
 //    implementation("org.projectlombok:lombok:1.18.30")
 //    annotationProcessor("org.projectlombok:lombok:1.18.30") // 必须加上这个，否则注解不会生效
 }
@@ -47,9 +55,35 @@ java {
         languageVersion.set(JavaLanguageVersion.of(17))
     }
 }
+// Spotless 配置
+spotless {
+    java {
+        target("src/**/*.java")  // 格式化所有 Java 文件
 
+        // 使用 Google Java Format
+        googleJavaFormat("1.17.0").aosp()  // 使用 AOSP 风格 (4空格缩进)
+        // 或者使用默认 Google 风格 (2空格缩进)
+        // googleJavaFormat("1.17.0")
+
+        // 可选: 移除未使用的 imports
+//        removeUnusedImports()
+
+        // 可选: 格式化 imports 顺序
+//        importOrder()
+    }
+}
 tasks.withType<JavaExec> {
-    jvmArgs = listOf("-Xmx512m", "-Dfile.encoding=UTF-8", "-Dsun.stdout.encoding=UTF-8", "-Dsun.stderr.encoding=UTF-8")
+    jvmArgs = listOf(
+            "--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
+            "--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED",
+            "--add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED",
+            "--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
+            "--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
+            "-Xmx512m",
+            "-Dfile.encoding=UTF-8",
+            "-Dsun.stdout.encoding=UTF-8",
+            "-Dsun.stderr.encoding=UTF-8"
+    )
 }
 
 

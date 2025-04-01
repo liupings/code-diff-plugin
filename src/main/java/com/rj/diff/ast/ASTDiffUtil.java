@@ -21,12 +21,12 @@ public class ASTDiffUtil {
         System.out.println("=== 对比结果 ===");
         for (String method : oldMethods) {
             if (!newMethods.contains(method)) {
-                System.out.println("方法被删除: " + method);
+                System.out.println("方法被删除:" + method);
             }
         }
         for (String method : newMethods) {
             if (!oldMethods.contains(method)) {
-                System.out.println("方法新增: " + method);
+                System.out.println("方法新增:" + method);
             }
         }
     }
