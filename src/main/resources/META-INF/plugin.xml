@@ -13,7 +13,7 @@
     <!-- Description of the plugin displayed on the Plugin Page and IDE Plugin Manager.
          Simple HTML elements (text formatting, paragraphs, and lists) can be added inside of <![CDATA[ ]]> tag.
          Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-description -->
-    <description><![CDATA[ 理发店水力发理发店水力发电第三方理发店水力发电第三方理发店水力发电第三方理发店水力发电第三方理发店水力发电第三方电第三方  ]]></description>
+    <description><![CDATA[ 一个能自动更新代码的插件，一个能自动更新代码的插件，一个能自动更新代码的插件，一个能自动更新代码的插件  ]]></description>
 
     <!-- Product and plugin compatibility requirements.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
@@ -32,11 +32,11 @@
     <!--        </component>-->
     <!--    </application-components>-->
     <actions>
-        <action id="MyCodeCompareAction" class="com.rj.diff.dialog.algorithm.MyCodeCompareAction" text="从快速开发平台更新代码" description="对比本地和远程代码">
-            <add-to-group group-id="EditorPopupMenu" anchor="first"/>
-            <add-to-group group-id="ToolsMenu" anchor="last"/>
-        </action>
-        <action id="MyCodeCompareActiona" class="com.rj.diff.current.MyCodeCompareActionCurrent" text="从快速开发平台更新代码AST" description="对比本地和远程代码">
+<!--        <action id="MyCodeCompareAction" class="com.rj.diff.dialog.algorithm.MyCodeCompareAction" text="从快速开发平台更新代码" description="对比本地和远程代码">-->
+<!--            <add-to-group group-id="EditorPopupMenu" anchor="first"/>-->
+<!--            <add-to-group group-id="ToolsMenu" anchor="last"/>-->
+<!--        </action>-->
+        <action id="MyCodeCompareActiona" class="com.rj.diff.current.MyCodeCompareAction" text="从快速开发平台更新代码AST" description="对比本地和远程代码">
             <add-to-group group-id="EditorPopupMenu" anchor="first"/>
             <add-to-group group-id="ToolsMenu" anchor="last"/>
         </action>

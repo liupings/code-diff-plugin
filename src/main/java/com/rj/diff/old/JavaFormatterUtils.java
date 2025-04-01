@@ -1,4 +1,4 @@
-package com.rj.diff.currentA;
+package com.rj.diff.old;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

@@ -36,7 +36,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.prefs.Preferences;
 
-public class MyCodeCompareDialogCurrent extends DialogWrapper {
+public class MyCodeCompareDialog extends DialogWrapper {
     private final RSyntaxTextArea leftTextArea;
     private final RSyntaxTextArea rightTextArea;
     private final JButton fetchButton;
@@ -56,7 +56,7 @@ public class MyCodeCompareDialogCurrent extends DialogWrapper {
     private boolean isAdjusting = false;
 
 
-    public MyCodeCompareDialogCurrent(@Nullable Project project, String sourceCode, Path sourceFilePath, VirtualFile currentFile) {
+    public MyCodeCompareDialog(@Nullable Project project, String sourceCode, Path sourceFilePath, VirtualFile currentFile) {
         super(project, true);
         // 设置对话框初始大小
         setSize(1500, 800);
@@ -406,7 +406,7 @@ public class MyCodeCompareDialogCurrent extends DialogWrapper {
             return;
         }
         //leftTextArea.setText(rightTextArea.getText());
-        String reslutJava = com.rj.diff.current.UpdaterJavaFileUtils1.updateControllerWithDifferencesStr(rightTextArea.getText(), leftTextArea.getText());
+        String reslutJava = UpdaterJavaFileUtils.updateControllerWithDifferencesStr(rightTextArea.getText(), leftTextArea.getText());
         leftTextArea.setText(reslutJava);
         compareCode(null);
     }
@@ -483,13 +483,13 @@ public class MyCodeCompareDialogCurrent extends DialogWrapper {
     }
 
     private void savePreferences() {
-        Preferences prefs = Preferences.userNodeForPackage(MyCodeCompareDialogCurrent.class);
+        Preferences prefs = Preferences.userNodeForPackage(MyCodeCompareDialog.class);
         prefs.put("lastUrl", urlTextField.getText());
         prefs.put("lastLanguage", (String) languageComboBox.getSelectedItem());
     }
 
     private void loadPreferences() {
-        Preferences prefs = Preferences.userNodeForPackage(MyCodeCompareDialogCurrent.class);
+        Preferences prefs = Preferences.userNodeForPackage(MyCodeCompareDialog.class);
         urlTextField.setText(prefs.get("lastUrl", ""));
         String lastLanguage = prefs.get("lastLanguage", "Java");
         languageComboBox.setSelectedItem(lastLanguage);

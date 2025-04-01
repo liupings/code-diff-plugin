@@ -1,4 +1,4 @@
-package com.rj.diff.currentA;
+package com.rj.diff.old;
 
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
 
-public class MyCodeCompareAction1 extends AnAction {
+public class MyCodeCompareActionCurrent extends AnAction {
     @Override
     public void actionPerformed(@NotNull AnActionEvent e) {
         Project project = e.getProject();
@@ -32,7 +32,7 @@ public class MyCodeCompareAction1 extends AnAction {
         VirtualFile file = e.getData(CommonDataKeys.VIRTUAL_FILE);
 
         // 在 IDE 窗口中央显示对话框
-        MyCodeCompareDialog1 dialog = new MyCodeCompareDialog1(project, content, filePath, file);
+        MyCodeCompareDialogCurrent dialog = new MyCodeCompareDialogCurrent(project, content, filePath, file);
         dialog.show();
 
         // 如果点击了确定，刷新文件

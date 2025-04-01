@@ -1,4 +1,4 @@
-package com.rj.diff.currentA;
+package com.rj.diff.old;
 
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.HttpUtil;
@@ -13,7 +13,6 @@ import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.components.JBScrollPane;
 import com.rj.diff.CodeDiffNotifications;
-import com.rj.diff.current.UpdaterJavaFileUtils1;
 import com.rj.diff.diff_match_patch;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
@@ -37,7 +36,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.prefs.Preferences;
 
-public class MyCodeCompareDialog1 extends DialogWrapper {
+public class MyCodeCompareDialogCurrent extends DialogWrapper {
     private final RSyntaxTextArea leftTextArea;
     private final RSyntaxTextArea rightTextArea;
     private final JButton fetchButton;
@@ -57,7 +56,7 @@ public class MyCodeCompareDialog1 extends DialogWrapper {
     private boolean isAdjusting = false;
 
 
-    public MyCodeCompareDialog1(@Nullable Project project, String sourceCode, Path sourceFilePath, VirtualFile currentFile) {
+    public MyCodeCompareDialogCurrent(@Nullable Project project, String sourceCode, Path sourceFilePath, VirtualFile currentFile) {
         super(project, true);
         // 设置对话框初始大小
         setSize(1500, 800);
@@ -407,7 +406,7 @@ public class MyCodeCompareDialog1 extends DialogWrapper {
             return;
         }
         //leftTextArea.setText(rightTextArea.getText());
-        String reslutJava = UpdaterJavaFileUtils1.updateControllerWithDifferencesStr(rightTextArea.getText(), leftTextArea.getText());
+        String reslutJava = com.rj.diff.old.UpdaterJavaFileUtilsCurrent.updateControllerWithDifferencesStr(rightTextArea.getText(), leftTextArea.getText());
         leftTextArea.setText(reslutJava);
         compareCode(null);
     }
@@ -484,13 +483,13 @@ public class MyCodeCompareDialog1 extends DialogWrapper {
     }
 
     private void savePreferences() {
-        Preferences prefs = Preferences.userNodeForPackage(MyCodeCompareDialog1.class);
+        Preferences prefs = Preferences.userNodeForPackage(MyCodeCompareDialogCurrent.class);
         prefs.put("lastUrl", urlTextField.getText());
         prefs.put("lastLanguage", (String) languageComboBox.getSelectedItem());
     }
 
     private void loadPreferences() {
-        Preferences prefs = Preferences.userNodeForPackage(MyCodeCompareDialog1.class);
+        Preferences prefs = Preferences.userNodeForPackage(MyCodeCompareDialogCurrent.class);
         urlTextField.setText(prefs.get("lastUrl", ""));
         String lastLanguage = prefs.get("lastLanguage", "Java");
         languageComboBox.setSelectedItem(lastLanguage);

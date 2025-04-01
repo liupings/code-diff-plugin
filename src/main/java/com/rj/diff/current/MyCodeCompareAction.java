@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
 
-public class MyCodeCompareActionCurrent extends AnAction {
+public class MyCodeCompareAction extends AnAction {
     @Override
     public void actionPerformed(@NotNull AnActionEvent e) {
         Project project = e.getProject();
@@ -32,7 +32,7 @@ public class MyCodeCompareActionCurrent extends AnAction {
         VirtualFile file = e.getData(CommonDataKeys.VIRTUAL_FILE);
 
         // 在 IDE 窗口中央显示对话框
-        MyCodeCompareDialogCurrent dialog = new MyCodeCompareDialogCurrent(project, content, filePath, file);
+        MyCodeCompareDialog dialog = new MyCodeCompareDialog(project, content, filePath, file);
         dialog.show();
 
         // 如果点击了确定，刷新文件

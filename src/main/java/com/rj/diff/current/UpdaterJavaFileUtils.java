@@ -8,6 +8,7 @@ import com.github.javaparser.ast.body.*;
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.google.googlejavaformat.java.FormatterException;
+import com.rj.diff.old.UpdaterJavaFileUtilsCurrent;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -17,9 +18,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class UpdaterJavaFileUtils1 {
+public class UpdaterJavaFileUtils {
 
-    private static Log log = LogFactory.get(UpdaterJavaFileUtils1.class);
+    private static Log log = LogFactory.get(UpdaterJavaFileUtilsCurrent.class);
 
     public static void updateControllerWithDifferences(Path sourceAPath, Path sourceBPath, Path targetPath) throws IOException, FormatterException, InterruptedException {
         // 读取文件内容
@@ -48,51 +49,52 @@ public class UpdaterJavaFileUtils1 {
         saveUpdatedClass(aCu, targetPath);
     }
 
+    //A是目标；B是源
     public static String updateControllerWithDifferencesStr(String sourceJavaInfo, String targetJavaInfo) {
         // 解析两个类
         JavaParser javaParser = new JavaParser();
-        CompilationUnit aCu = javaParser.parse(sourceJavaInfo).getResult().get();
-        CompilationUnit bCu = javaParser.parse(targetJavaInfo).getResult().get();
+        CompilationUnit sourceClassCom = javaParser.parse(sourceJavaInfo).getResult().get();
+        CompilationUnit targetClassCom = javaParser.parse(targetJavaInfo).getResult().get();
 
         // 获取两个类的声明
-        ClassOrInterfaceDeclaration aClass = aCu.findFirst(ClassOrInterfaceDeclaration.class).orElseThrow(() -> new RuntimeException("在文件中找不到类"));
-        ClassOrInterfaceDeclaration bClass = bCu.findFirst(ClassOrInterfaceDeclaration.class).orElseThrow(() -> new RuntimeException("在文件中找不到类"));
+        ClassOrInterfaceDeclaration sourceClass = sourceClassCom.findFirst(ClassOrInterfaceDeclaration.class).orElseThrow(() -> new RuntimeException("在文件中找不到类"));
+        ClassOrInterfaceDeclaration targetClass = targetClassCom.findFirst(ClassOrInterfaceDeclaration.class).orElseThrow(() -> new RuntimeException("在文件中找不到类"));
 
         // 1. 处理类级别的注解差异
-        processClassAnnotations(aClass, bClass);
+        processClassAnnotations(sourceClass, targetClass);
 
-        // 2. 找出方法差异并应用到A类
-        processMethodDifferences(aClass, bClass);
+        // 2. 找出方法差异并应用到目标类
+        processMethodDifferences(sourceClass, targetClass);
 
-        // 3. 找出字段差异并应用到A类
-        processFieldDifferences(aClass, bClass);
+        // 3. 找出字段差异并应用到目标类
+        processFieldDifferences(sourceClass, targetClass);
 
-        String format = JavaFormatterUtils.format(aCu.toString());
+        String format = JavaFormatterUtils.format(sourceClass.toString());
 
         log.info("AST解析并覆盖目标完成....{}", format.length());
         return format;
     }
 
     // ========== 类注解处理 ==========
-    private static void processClassAnnotations(ClassOrInterfaceDeclaration aClass, ClassOrInterfaceDeclaration bClass) {
+    private static void processClassAnnotations(ClassOrInterfaceDeclaration sourceClass, ClassOrInterfaceDeclaration targetClass) {
         // 获取B类中A类没有的注解
-        List<AnnotationExpr> newAnnotations = bClass.getAnnotations().stream()
-                .filter(bAnnotation -> aClass.getAnnotations().stream()
+        List<AnnotationExpr> newAnnotations = targetClass.getAnnotations().stream()
+                .filter(bAnnotation -> sourceClass.getAnnotations().stream()
                         .noneMatch(aAnnotation -> annotationsEqual(aAnnotation, bAnnotation)))
                 .collect(Collectors.toList());
 
         // 添加新注解到A类
-        newAnnotations.forEach(aClass::addAnnotation);
+        newAnnotations.forEach(sourceClass::addAnnotation);
     }
 
     // ========== 方法处理 ==========
-    private static void processMethodDifferences(ClassOrInterfaceDeclaration aClass, ClassOrInterfaceDeclaration bClass) {
+    private static void processMethodDifferences(ClassOrInterfaceDeclaration sourceClass, ClassOrInterfaceDeclaration targetClass) {
         // 获取B类中的所有方法
-        for (MethodDeclaration bMethod : bClass.getMethods()) {
+        for (MethodDeclaration bMethod : targetClass.getMethods()) {
             String methodName = bMethod.getNameAsString();
 
             // 检查A类中是否已有该方法
-            Optional<MethodDeclaration> aMethodOpt = aClass.getMethods().stream()
+            Optional<MethodDeclaration> aMethodOpt = sourceClass.getMethods().stream()
                     .filter(m -> m.getNameAsString().equals(methodName))
                     .findFirst();
 
@@ -110,7 +112,7 @@ public class UpdaterJavaFileUtils1 {
                 }
             } else {
                 // 方法不存在，直接添加整个方法
-                aClass.addMember(bMethod.clone());
+                sourceClass.addMember(bMethod.clone());
             }
         }
     }
@@ -161,10 +163,10 @@ public class UpdaterJavaFileUtils1 {
     }
 
     private static AnnotationExpr mergeParametersAnnotations(AnnotationExpr aParams, AnnotationExpr bParams) {
-        // 获取A注解中的所有参数
+        // 获取目标注解中的所有参数
         List<AnnotationExpr> aParamAnnotations = getParameterAnnotationsFromParameters(aParams);
 
-        // 获取B注解中的所有参数
+        // 获取源注解中的所有参数
         List<AnnotationExpr> bParamAnnotations = getParameterAnnotationsFromParameters(bParams);
 
         // 找出B中有而A中没有的参数
@@ -186,12 +188,12 @@ public class UpdaterJavaFileUtils1 {
             // 创建数组初始化表达式
             ArrayInitializerExpr arrayInit = new ArrayInitializerExpr();
 
-            // 添加A的所有参数
+            // 添加目标的所有参数
             aParamAnnotations.forEach(param -> {
                 arrayInit.getValues().add(param.clone());
             });
 
-            // 添加B的新参数
+            // 添加源的新参数
             newParams.forEach(param -> {
                 arrayInit.getValues().add(param.clone());
             });
@@ -272,22 +274,22 @@ public class UpdaterJavaFileUtils1 {
     }
 
     // ========== 字段处理 ==========
-    private static void processFieldDifferences(ClassOrInterfaceDeclaration aClass, ClassOrInterfaceDeclaration bClass) {
+    private static void processFieldDifferences(ClassOrInterfaceDeclaration sourceClass, ClassOrInterfaceDeclaration targetClass) {
         // 获取A类中所有字段名
-        Set<String> aFieldNames = aClass.getFields().stream()
+        Set<String> aFieldNames = sourceClass.getFields().stream()
                 .flatMap(fd -> fd.getVariables().stream())
                 .map(v -> v.getNameAsString())
                 .collect(Collectors.toSet());
 
-        // 处理B类中的每个字段
-        for (FieldDeclaration bField : bClass.getFields()) {
-            // 检查字段是否已存在于A类
+        // 处理源类中的每个字段
+        for (FieldDeclaration bField : targetClass.getFields()) {
+            // 检查字段是否已存在于目标类
             boolean fieldExists = bField.getVariables().stream()
                     .anyMatch(v -> aFieldNames.contains(v.getNameAsString()));
 
             if (!fieldExists) {
                 // 字段不存在，添加整个字段声明
-                aClass.getMembers().add(0, bField.clone());
+                sourceClass.getMembers().add(0, bField.clone());
 
             }
         }

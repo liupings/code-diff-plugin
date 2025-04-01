@@ -1,4 +1,4 @@
-package com.rj.diff.current;
+package com.rj.diff.old;
 
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
@@ -8,6 +8,7 @@ import com.github.javaparser.ast.body.*;
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.google.googlejavaformat.java.FormatterException;
+import com.rj.diff.current.UpdaterJavaFileUtils;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -19,7 +20,7 @@ import java.util.stream.Stream;
 
 public class UpdaterJavaFileUtilsCurrent {
 
-    private static Log log = LogFactory.get(com.rj.diff.current.UpdaterJavaFileUtils1.class);
+    private static Log log = LogFactory.get(UpdaterJavaFileUtils.class);
 
     public static void updateControllerWithDifferences(Path sourceAPath, Path sourceBPath, Path targetPath) throws IOException, FormatterException, InterruptedException {
         // 读取文件内容
