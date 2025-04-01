@@ -78,13 +78,6 @@ public class ControllerDiffUpdater1 {
 
     // 为已有方法添加缺失的注解
     private static void addMissingMethodAnnotations(MethodDeclaration aMethod, MethodDeclaration bMethod) {
-        //bMethod.getAnnotations().forEach(bAnnotation -> {
-        //    boolean annotationExists = aMethod.getAnnotations().stream()
-        //            .anyMatch(aAnnotation -> annotationsEqual(aAnnotation, bAnnotation));
-        //    if (!annotationExists) {
-        //        aMethod.addAnnotation(bAnnotation.clone());
-        //    }
-        //});
         for (AnnotationExpr bAnnotation : bMethod.getAnnotations()) {
             // 特殊处理 @Parameters 注解
             if (bAnnotation.getNameAsString().equals("Parameters")) {
@@ -193,9 +186,6 @@ public class ControllerDiffUpdater1 {
                 && aParam.getType().equals(bParam.getType());
     }
 
-    //private static boolean annotationsEqual(AnnotationExpr a, AnnotationExpr b) {
-    //    return a.toString().equals(b.toString()); // 简化比较逻辑
-    //}
     // ========== 仅添加缺失的类注解 ==========
     private static void addMissingClassAnnotations(ClassOrInterfaceDeclaration aClass, ClassOrInterfaceDeclaration bClass) {
         bClass.getAnnotations().stream()
