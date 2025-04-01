@@ -215,11 +215,16 @@ public class ControllerDiffUpdater1 {
                 .map(VariableDeclarator::getNameAsString)
                 .collect(Collectors.toSet());
 
-        // 添加B类中有而A类中没有的字段
-        bClass.getFields().stream()
+        // 收集B类中需要添加的字段（按原始顺序）
+        List<FieldDeclaration> fieldsToAdd = bClass.getFields().stream()
                 .filter(bField -> bField.getVariables().stream()
                         .anyMatch(v -> !aFieldNames.contains(v.getNameAsString())))
-                .forEach(aClass::addMember);
+                .collect(Collectors.toList());
+
+        // 逆序添加到最前面（保持原始声明的相对顺序）
+        for (int i = fieldsToAdd.size() - 1; i >= 0; i--) {
+            aClass.getMembers().add(0, fieldsToAdd.get(i).clone());
+        }
     }
 
     // ========== 辅助方法（保持不变） ==========
