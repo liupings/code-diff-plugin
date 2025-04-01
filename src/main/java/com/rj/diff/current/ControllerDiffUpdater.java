@@ -1,10 +1,14 @@
 package com.rj.diff.current;
 
+import cn.hutool.log.Log;
+import cn.hutool.log.LogFactory;
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.ImportDeclaration;
 import com.github.javaparser.ast.body.*;
 import com.github.javaparser.ast.expr.*;
 import com.google.googlejavaformat.java.FormatterException;
+import com.rj.diff.old.UpdaterJavaFileUtilsCurrent;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -16,7 +20,9 @@ import java.util.stream.Stream;
 
 public class ControllerDiffUpdater {
 
-    public static void updateControllerWithDifferences(Path sourceAPath, Path sourceBPath) throws IOException, FormatterException, InterruptedException {
+    private static Log log = LogFactory.get(ControllerDiffUpdater.class);
+
+    public static void updateControllerWithDifferences(Path sourceAPath, Path sourceBPath) throws IOException, InterruptedException {
         // 读取文件内容
         String aClassContent = new String(Files.readAllBytes(sourceAPath));
         String bClassContent = new String(Files.readAllBytes(sourceBPath));
@@ -31,21 +37,64 @@ public class ControllerDiffUpdater {
         ClassOrInterfaceDeclaration bClass = bCu.findFirst(ClassOrInterfaceDeclaration.class)
                 .orElseThrow(() -> new RuntimeException("在文件中找不到类"));
 
-        // 1. 处理类注解（仅添加B有而A没有的）
+        // 首先处理import语句（只添加不覆盖）
+        processImports(aCu, bCu);
+
+        //  处理类注解（仅添加B有而A没有的）
         addMissingClassAnnotations(aClass, bClass);
 
-        // 2. 处理方法差异：添加新方法，或为已有方法添加新参数/注解
+        // 处理方法差异：添加新方法，或为已有方法添加新参数/注解
         processMethodDifferences(aClass, bClass);
 
-        // 3. 处理字段差异（仅添加B有而A没有的）
+        // 处理字段差异（仅添加B有而A没有的）
         addMissingFields(aClass, bClass);
 
-        // 保存回A文件
-        saveUpdatedClass(aCu, sourceAPath);
-
-        // 保存回A文件（不覆盖原有代码）
+        // 保存回目标文件
         saveUpdatedClass(aCu, sourceAPath);
     }
+
+    //A是目标；B是源
+    public static String updateControllerWithDifferences(String sourceInfo, String targetInfo) {
+        // 解析两个类
+        JavaParser javaParser = new JavaParser();
+        CompilationUnit tagetCu = javaParser.parse(targetInfo).getResult().get();
+        CompilationUnit sourceCu = javaParser.parse(sourceInfo).getResult().get();
+
+        ClassOrInterfaceDeclaration targetClass = tagetCu.findFirst(ClassOrInterfaceDeclaration.class).orElseThrow(() -> new RuntimeException("在文件中找不到类"));
+        ClassOrInterfaceDeclaration sourceClass = sourceCu.findFirst(ClassOrInterfaceDeclaration.class).orElseThrow(() -> new RuntimeException("在文件中找不到类"));
+
+        // 首先处理import语句（只添加不覆盖）
+        processImports(tagetCu, sourceCu);
+
+        //  处理类注解（仅添加B有而A没有的）
+        addMissingClassAnnotations(targetClass, sourceClass);
+
+        // 处理方法差异：添加新方法，或为已有方法添加新参数/注解
+        processMethodDifferences(targetClass, sourceClass);
+
+        // 处理字段差异（仅添加B有而A没有的）
+        addMissingFields(targetClass, sourceClass);
+
+        // 保存回目标文件
+        String format = JavaFormatterUtils.format(tagetCu.toString());
+
+        log.info("AST解析并覆盖目标完成....{}", format.length());
+        return format;
+    }
+
+    // 处理import语句（核心新增方法）
+    private static void processImports(CompilationUnit aCu, CompilationUnit bCu) {
+        // 获取A文件已有的import
+        Set<String> existingImports = aCu.getImports().stream()
+                .map(ImportDeclaration::toString)
+                .collect(Collectors.toSet());
+
+        // 添加目标文件中有而A文件没有的import
+        bCu.getImports().stream()
+                .filter(bImport -> !existingImports.contains(bImport.toString()))
+                .forEach(aCu::addImport);
+    }
+
     // ========== 方法处理（核心修改） ==========
     private static void processMethodDifferences(ClassOrInterfaceDeclaration aClass, ClassOrInterfaceDeclaration bClass) {
         for (MethodDeclaration bMethod : bClass.getMethods()) {
@@ -65,6 +114,7 @@ public class ControllerDiffUpdater {
             }
         }
     }
+
     // 为已有方法添加缺失的参数
     private static void addMissingParameters(MethodDeclaration aMethod, MethodDeclaration bMethod) {
         bMethod.getParameters().forEach(bParam -> {
@@ -197,6 +247,7 @@ public class ControllerDiffUpdater {
         }
         return Optional.empty();
     }
+
     // ========== 辅助方法 ==========
     private static boolean parametersEqual(Parameter aParam, Parameter bParam) {
         return aParam.getNameAsString().equals(bParam.getNameAsString())
