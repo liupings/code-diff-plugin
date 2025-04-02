@@ -95,34 +95,6 @@ public class MyCodeCompareDialog extends DialogWrapper {
         urlTextField.setText("http://172.16.1.11/api/interface-definition/api/generator/javaBasedByClassName/" + currentFile.getName());
     }
 
-    private void updateLeftTextArea(String newContent) {
-        SwingUtilities.invokeLater(() -> {
-            // 保存当前状态
-            int caretPos = leftTextArea.getCaretPosition();
-            JScrollPane scrollPane = (JScrollPane) SwingUtilities.getAncestorOfClass(
-                    JScrollPane.class, leftTextArea);
-
-            if (scrollPane != null) {
-                lastScrollPosition = scrollPane.getViewport().getViewPosition();
-            }
-
-            // 更新内容
-            leftTextArea.setText(newContent);
-
-            // 恢复光标位置
-            if (caretPos <= newContent.length()) {
-                leftTextArea.setCaretPosition(caretPos);
-            } else {
-                leftTextArea.setCaretPosition(newContent.length());
-            }
-
-            // 恢复滚动位置
-            if (scrollPane != null && lastScrollPosition != null) {
-                scrollPane.getViewport().setViewPosition(lastScrollPosition);
-            }
-        });
-    }
-
     @Override
     public void dispose() {
         super.dispose();
@@ -409,39 +381,6 @@ public class MyCodeCompareDialog extends DialogWrapper {
         String reslutJava = AstDiffUpdater.updateControllerWithDifferences(project,rightTextArea.getText(), leftTextArea.getText());
         leftTextArea.setText(reslutJava);
         compareCode(null);
-    }
-
-    private void applySelectedChanges(ActionEvent e) {
-        // 获取用户在 rightTextArea 选中的文本
-        String selectedText = rightTextArea.getSelectedText();
-        if (selectedText == null || selectedText.isEmpty()) {
-            CodeDiffNotifications.showInfo(project, "提示", "请选择代码");
-            return;
-        }
-
-        // 获取 rightTextArea 选中部分的起始偏移量
-        int startOffset = rightTextArea.getSelectionStart();
-
-        try {
-            // 计算选中部分的起始行号
-            int rightLineNumber = rightTextArea.getLineOfOffset(startOffset);
-
-            // 计算 leftTextArea 的总行数
-            int leftTotalLines = leftTextArea.getLineCount();
-
-            if (rightLineNumber < leftTotalLines) {
-                // leftTextArea 行数足够，获取该行的起始偏移量
-                int leftLineStartOffset = leftTextArea.getLineStartOffset(rightLineNumber);
-                // 在该行插入 selectedText
-                leftTextArea.insert(selectedText + "\n", leftLineStartOffset);
-            } else {
-                // leftTextArea 行数不足，在光标位置插入
-                int caretPos = leftTextArea.getCaretPosition();
-                leftTextArea.insert(selectedText + "\n", caretPos);
-            }
-        } catch (BadLocationException e1) {
-            e1.printStackTrace();
-        }
     }
 
     private void saveToSourceFile(ActionEvent e) {
