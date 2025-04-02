@@ -41,10 +41,10 @@ public class MyCodeCompareDialog extends DialogWrapper {
     private final RSyntaxTextArea rightTextArea;
     private final JButton fetchButton;
     private final JButton compareButton;
-    private final JButton applyAllButton;
-    private JPanel mainPanel;
+    private final JButton applyButton;
+    //private JPanel mainPanel;
     private final Project project;
-    private final JButton applySelectedButton;
+    //private final JButton applySelectedButton;
     private final JButton saveButton;
     private Point lastScrollPosition;
     private final VirtualFile currentFile;
@@ -74,9 +74,9 @@ public class MyCodeCompareDialog extends DialogWrapper {
 
         fetchButton = new JButton("获取快速开发平台代码");
         compareButton = new JButton("对比代码");
-        applyAllButton = new JButton("全部应用");
-        applySelectedButton = new JButton("应用选中");
-        saveButton = new JButton("保存到源文件");
+        applyButton = new JButton("应用");
+        //applySelectedButton = new JButton("应用选中");
+        saveButton = new JButton("保存");
         urlTextField = new JTextField(30);
         //languageComboBox = new ComboBox<>(new String[]{"Java", "Kotlin", "Python", "JavaScript", "HTML", "XML", "SQL", "JSON"});
         languageComboBox = new ComboBox<>(new String[]{"Java"});
@@ -226,15 +226,15 @@ public class MyCodeCompareDialog extends DialogWrapper {
 
         mainPanel.add(controlPanel, BorderLayout.NORTH);
         mainPanel.add(codePanel, BorderLayout.CENTER);
-        this.mainPanel = mainPanel;
+        //this.mainPanel = mainPanel;
         return mainPanel;
     }
 
     @Override
     protected JComponent createSouthPanel() {
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        buttonPanel.add(applySelectedButton);
-        buttonPanel.add(applyAllButton);
+        //buttonPanel.add(applySelectedButton);
+        buttonPanel.add(applyButton);
         buttonPanel.add(saveButton);
 
         // 添加默认的OK/Cancel按钮
@@ -258,8 +258,8 @@ public class MyCodeCompareDialog extends DialogWrapper {
     private void setupListeners() {
         fetchButton.addActionListener(this::fetchRemoteCode);
         compareButton.addActionListener(this::compareCode);
-        applyAllButton.addActionListener(this::applyAllChanges);
-        applySelectedButton.addActionListener(this::applySelectedChanges);
+        applyButton.addActionListener(this::applyAllChanges);
+        //applySelectedButton.addActionListener(this::applySelectedChanges);
         saveButton.addActionListener(this::saveToSourceFile);
 
         languageComboBox.addActionListener(e -> {
@@ -271,34 +271,34 @@ public class MyCodeCompareDialog extends DialogWrapper {
         });
 
         // 自动格式化代码监听
-        leftTextArea.getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void insertUpdate(DocumentEvent e) {
-                autoFormatCode(leftTextArea);
-            }
-
-            @Override
-            public void removeUpdate(DocumentEvent e) {
-                autoFormatCode(leftTextArea);
-            }
-
-            @Override
-            public void changedUpdate(DocumentEvent e) {
-                autoFormatCode(leftTextArea);
-            }
-        });
+        //leftTextArea.getDocument().addDocumentListener(new DocumentListener() {
+        //    @Override
+        //    public void insertUpdate(DocumentEvent e) {
+        //        autoFormatCode(leftTextArea);
+        //    }
+        //
+        //    @Override
+        //    public void removeUpdate(DocumentEvent e) {
+        //        autoFormatCode(leftTextArea);
+        //    }
+        //
+        //    @Override
+        //    public void changedUpdate(DocumentEvent e) {
+        //        autoFormatCode(leftTextArea);
+        //    }
+        //});
     }
 
     //自动格式化 Java 代码
-    private void autoFormatCode(RSyntaxTextArea textArea) {
-        //       try {
-        //String formattedCode = new Formatter().formatSource(textArea.getText());
-        //           textArea.setText(formattedCode);
-        //       } catch (FormatterException e) {
-        //           CodeDiffNotifications.showError(project, "错误", "格式化失败");
-        //
-        //       }
-    }
+    //private void autoFormatCode(RSyntaxTextArea textArea) {
+    //    //       try {
+    //    //String formattedCode = new Formatter().formatSource(textArea.getText());
+    //    //           textArea.setText(formattedCode);
+    //    //       } catch (FormatterException e) {
+    //    //           CodeDiffNotifications.showError(project, "错误", "格式化失败");
+    //    //
+    //    //       }
+    //}
 
     private String getSyntaxStyleForLanguage(String language) {
         if (language == null) return SyntaxConstants.SYNTAX_STYLE_NONE;
