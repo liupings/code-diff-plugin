@@ -284,7 +284,7 @@ public class CodeElementDiffer {
         return Collections.emptyList();
     }
 
-    private void highlightNode(Node node) throws BadLocationException {
+    private void highlightNode(Node node) {
         if (node.getRange().isPresent()) {
             int start = node.getRange().get().begin.column;
             int end = node.getRange().get().end.column;
