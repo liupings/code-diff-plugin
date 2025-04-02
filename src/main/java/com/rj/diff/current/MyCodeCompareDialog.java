@@ -311,7 +311,7 @@ public class MyCodeCompareDialog extends DialogWrapper {
                 });
     }
 
-    //算法对比
+    //代码元素对比
     private void compareCode(ActionEvent e) {
         String leftText = leftTextArea.getText();
         String rightText = rightTextArea.getText();
