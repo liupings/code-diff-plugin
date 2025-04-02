@@ -102,16 +102,24 @@ public class CodeElementDiffer {
                                 ClassOrInterfaceDeclaration rightClass) throws BadLocationException {
         Map<String, MethodDeclaration> leftMethods = leftClass.getMethods().stream()
                 .collect(Collectors.toMap(MethodDeclaration::getNameAsString, m -> m));
-
+        // 收集左边所有方法名
+        Set<String> leftMethodNames = leftClass.getMethods().stream()
+                .map(MethodDeclaration::getNameAsString)
+                .collect(Collectors.toSet());
         for (MethodDeclaration rightMethod : rightClass.getMethods()) {
             MethodDeclaration leftMethod = leftMethods.get(rightMethod.getNameAsString());
 
+            String rightMethodName = rightMethod.getNameAsString();
             if (leftMethod == null) {
                 // 全新方法
-                highlightNode(rightMethod);
+                highlightNode(rightMethod.getName());
             } else {
                 // 对比方法细节
                 compareMethodDetails(leftMethod, rightMethod);
+            }
+            // 如果左边没有同名方法，高亮右边的方法名
+            if (!leftMethodNames.contains(rightMethodName)) {
+                highlightNode(rightMethod.getName());
             }
         }
     }
