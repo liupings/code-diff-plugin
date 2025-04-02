@@ -139,6 +139,9 @@ public class ControllerDiffUpdater {
         if (aParameters.isPresent() || bParameters.isPresent()) {
             if (aParameters.isPresent() && bParameters.isPresent()) {
                 // 合并两个Parameters注解
+                //name不同：必定作为新参数添加
+                //name相同但schema.type不同：也作为新参数添加
+                //只有name和schema.type都相同时才视为重复参数
                 mergedAnnotations.add(mergeParametersAnnotations(aParameters.get(), bParameters.get()));
             } else {
                 // 使用存在的那个Parameters注解
@@ -172,34 +175,49 @@ public class ControllerDiffUpdater {
 
     // 合并两个Parameters注解的实现
     private static AnnotationExpr mergeParametersAnnotations(AnnotationExpr aParams, AnnotationExpr bParams) {
-        // 获取A和B的参数列表
         List<AnnotationExpr> aParamList = extractParameterAnnotations(aParams);
         List<AnnotationExpr> bParamList = extractParameterAnnotations(bParams);
 
-        // 找出B中独有的参数
-        List<AnnotationExpr> newParams = bParamList.stream()
-                .filter(bParam -> aParamList.stream().noneMatch(aParam -> parameterAnnotationsEqual(aParam, bParam)))
-                .collect(Collectors.toList());
+        // 创建合并后的参数列表（先包含A的所有参数）
+        List<AnnotationExpr> mergedParams = new ArrayList<>(aParamList);
 
-        // 如果没有新参数，直接返回A的注解
-        if (newParams.isEmpty()) {
-            return aParams.clone();
-        }
+        // 处理B的参数
+        bParamList.forEach(bParam -> {
+            // 检查是否已存在同名同类型的参数
+            boolean isDuplicate = aParamList.stream().anyMatch(aParam ->
+                    parameterNamesEqual(aParam, bParam) &&
+                            parameterSchemasEqual(aParam, bParam)
+            );
 
-        // 创建新的Parameters注解
+            // 如果不是重复参数则添加
+            if (!isDuplicate) {
+                mergedParams.add(bParam.clone());
+            }
+        });
+
+        // 构建合并后的@Parameters注解
         NormalAnnotationExpr merged = new NormalAnnotationExpr();
         merged.setName("Parameters");
 
-        // 创建合并后的参数数组
         ArrayInitializerExpr arrayInit = new ArrayInitializerExpr();
-        aParamList.forEach(p -> arrayInit.getValues().add(p.clone()));
-        newParams.forEach(p -> arrayInit.getValues().add(p.clone()));
-
-        // 添加参数数组到注解
+        mergedParams.forEach(p -> arrayInit.getValues().add(p.clone()));
         merged.addPair("value", arrayInit);
+
         return merged;
     }
 
+    // 辅助比较方法
+    private static boolean parameterNamesEqual(AnnotationExpr a, AnnotationExpr b) {
+        Optional<String> aName = getAnnotationMemberValue(a, "name");
+        Optional<String> bName = getAnnotationMemberValue(b, "name");
+        return aName.equals(bName);
+    }
+
+    private static boolean parameterSchemasEqual(AnnotationExpr a, AnnotationExpr b) {
+        Optional<String> aType = getSchemaType(a);
+        Optional<String> bType = getSchemaType(b);
+        return aType.equals(bType);
+    }
     // 从 @Parameters 注解中提取 @Parameter 列表
     private static List<AnnotationExpr> extractParameterAnnotations(AnnotationExpr parameters) {
         if (parameters instanceof NormalAnnotationExpr) {
@@ -227,16 +245,104 @@ public class ControllerDiffUpdater {
 
     // 比较两个 @Parameter 注解是否相同（根据name判断）
     private static boolean parameterAnnotationsEqual(AnnotationExpr a, AnnotationExpr b) {
+        //if (!(a instanceof NormalAnnotationExpr) || !(b instanceof NormalAnnotationExpr)) {
+        //    return false;
+        //}
+        //
+        //Optional<String> aName = getAnnotationMemberValue(a, "name");
+        //Optional<String> bName = getAnnotationMemberValue(b, "name");
+        //
+        //return aName.isPresent() && bName.isPresent() && aName.get().equals(bName.get());
+
+
+
         if (!(a instanceof NormalAnnotationExpr) || !(b instanceof NormalAnnotationExpr)) {
             return false;
         }
 
-        Optional<String> aName = getAnnotationMemberValue(a, "name");
-        Optional<String> bName = getAnnotationMemberValue(b, "name");
+        NormalAnnotationExpr aParam = (NormalAnnotationExpr)a;
+        NormalAnnotationExpr bParam = (NormalAnnotationExpr)b;
 
-        return aName.isPresent() && bName.isPresent() && aName.get().equals(bName.get());
+        // 比较name属性
+        Optional<String> aName = getAnnotationMemberValue(aParam, "name");
+        Optional<String> bName = getAnnotationMemberValue(bParam, "name");
+        if (!aName.equals(bName)) {
+            return false;
+        }
+
+        // 比较schema类型
+        Optional<String> aSchemaType = getSchemaType(aParam);
+        Optional<String> bSchemaType = getSchemaType(bParam);
+        return aSchemaType.equals(bSchemaType);
     }
 
+    /**
+     * 从任意注解表达式中获取@Schema的type值
+     * @param annotation 注解表达式（可以是NormalAnnotationExpr或SingleMemberAnnotationExpr）
+     * @return Schema的type值（如果存在）
+     */
+    private static Optional<String> getSchemaType(AnnotationExpr annotation) {
+        // 处理NormalAnnotationExpr情况（标准注解形式）
+        if (annotation instanceof NormalAnnotationExpr) {
+            return ((NormalAnnotationExpr) annotation).getPairs().stream()
+                    .filter(p -> p.getNameAsString().equals("schema"))
+                    .findFirst()
+                    .flatMap(p -> extractTypeFromSchemaValue(p.getValue()));
+        }
+        // 处理SingleMemberAnnotationExpr情况（单值注解形式）
+        else if (annotation instanceof SingleMemberAnnotationExpr) {
+            return extractTypeFromSchemaValue(
+                    ((SingleMemberAnnotationExpr) annotation).getMemberValue());
+        }
+        return Optional.empty();
+    }
+    /**
+     * 从可能包含@Schema注解的表达式中提取type值
+     */
+    private static Optional<String> extractTypeFromSchemaValue(Expression value) {
+        // 处理直接注解的情况
+        if (value.isAnnotationExpr()) {
+            AnnotationExpr schema = value.asAnnotationExpr();
+            if (schema.getNameAsString().equals("Schema")) {
+                return schema.getChildNodes().stream()
+                        .filter(n -> n instanceof MemberValuePair)
+                        .map(n -> (MemberValuePair) n)
+                        .filter(p -> p.getNameAsString().equals("type"))
+                        .findFirst()
+                        .map(p -> p.getValue().toString());
+            }
+        }
+        // 处理可能存在的其他表达式形式
+        return Optional.empty();
+    }
+    /**
+     * 判断是否需要添加为新的@Parameter
+     */
+    private static boolean shouldAddAsNewParameter(AnnotationExpr existingParam, AnnotationExpr newParam) {
+        // name不同 → 需要添加
+        if (!parameterNamesEqual(existingParam, newParam)) {
+            return true;
+        }
+
+        // name相同但type不同 → 也需要添加
+        return !parameterSchemasEqual(existingParam, newParam);
+    }
+
+    /**
+     * 合并参数列表（不覆盖，类型不同视为新参数）
+     */
+    private static List<AnnotationExpr> mergeParameterLists(List<AnnotationExpr> aParams, List<AnnotationExpr> bParams) {
+        List<AnnotationExpr> merged = new ArrayList<>(aParams);
+
+        bParams.forEach(bParam -> {
+            // 只有当不存在同名同类型参数时才添加
+            if (aParams.stream().noneMatch(aParam -> !shouldAddAsNewParameter(aParam, bParam))) {
+                merged.add(bParam.clone());
+            }
+        });
+
+        return merged;
+    }
     // 获取注解成员值
     private static Optional<String> getAnnotationMemberValue(AnnotationExpr annotation, String memberName) {
         if (annotation instanceof NormalAnnotationExpr) {
