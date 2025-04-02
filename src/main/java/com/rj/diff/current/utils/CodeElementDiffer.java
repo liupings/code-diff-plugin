@@ -284,21 +284,36 @@ public class CodeElementDiffer {
         return Collections.emptyList();
     }
 
-    private void highlightNode(Node node) {
-        if (node.getRange().isPresent()) {
-            int start = node.getRange().get().begin.column;
-            int end = node.getRange().get().end.column;
-            int line = node.getRange().get().begin.line - 1;
+    //private void highlightNode(Node node) {
+    //    if (node.getRange().isPresent()) {
+    //        int start = node.getRange().get().begin.column;
+    //        int end = node.getRange().get().end.column;
+    //        int line = node.getRange().get().begin.line - 1;
+    //
+    //        try {
+    //            int lineStart = rightTextArea.getLineStartOffset(line);
+    //            rightTextArea.getHighlighter().addHighlight(
+    //                    lineStart + start - 1,
+    //                    lineStart + end - 1,
+    //                    addedPainter);
+    //        } catch (Exception e) {
+    //            // 忽略高亮错误
+    //        }
+    //    }
+    //}
 
-            try {
-                int lineStart = rightTextArea.getLineStartOffset(line);
-                rightTextArea.getHighlighter().addHighlight(
-                        lineStart + start - 1,
-                        lineStart + end - 1,
-                        addedPainter);
-            } catch (Exception e) {
-                // 忽略高亮错误
-            }
+    private void highlightNode(Node node) throws BadLocationException {
+        if (node.getRange().isPresent()) {
+            // 获取注解的起始行和结束行
+            int startLine = node.getRange().get().begin.line - 1; // 转换为0-based
+            int endLine = node.getRange().get().end.line - 1;
+
+            // 获取起始行的起始偏移量和结束行的结束偏移量
+            int highlightStart = rightTextArea.getLineStartOffset(startLine);
+            int highlightEnd = rightTextArea.getLineEndOffset(endLine);
+
+            // 高亮从注解开始到右括号结束的整个范围
+            rightTextArea.getHighlighter().addHighlight(highlightStart, highlightEnd, addedPainter);
         }
     }
 }
