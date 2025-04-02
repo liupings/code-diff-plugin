@@ -8,6 +8,8 @@ import com.github.javaparser.ast.ImportDeclaration;
 import com.github.javaparser.ast.body.*;
 import com.github.javaparser.ast.expr.*;
 import com.google.googlejavaformat.java.FormatterException;
+import com.intellij.openapi.project.Project;
+import com.rj.diff.CodeDiffNotifications;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -53,14 +55,20 @@ public class AstDiffUpdater {
     }
 
     //A是目标；B是源
-    public static String updateControllerWithDifferences(String sourceInfo, String targetInfo) {
+    public static String updateControllerWithDifferences(Project project,String sourceInfo, String targetInfo) {
         // 解析两个类
         JavaParser javaParser = new JavaParser();
         CompilationUnit tagetCu = javaParser.parse(targetInfo).getResult().get();
         CompilationUnit sourceCu = javaParser.parse(sourceInfo).getResult().get();
 
-        ClassOrInterfaceDeclaration targetClass = tagetCu.findFirst(ClassOrInterfaceDeclaration.class).orElseThrow(() -> new RuntimeException("在文件中找不到类"));
-        ClassOrInterfaceDeclaration sourceClass = sourceCu.findFirst(ClassOrInterfaceDeclaration.class).orElseThrow(() -> new RuntimeException("在文件中找不到类"));
+        ClassOrInterfaceDeclaration targetClass = null;
+        ClassOrInterfaceDeclaration sourceClass = null;
+        try {
+            targetClass = tagetCu.findFirst(ClassOrInterfaceDeclaration.class).orElseThrow(() -> new RuntimeException("在文件中找不到类"));
+            sourceClass = sourceCu.findFirst(ClassOrInterfaceDeclaration.class).orElseThrow(() -> new RuntimeException("在文件中找不到类"));
+        } catch (RuntimeException e) {
+            CodeDiffNotifications.showError(project,"错误","代码错误，AST无法解析！！！");
+        }
 
         // 首先处理import语句（只添加不覆盖）
         processImports(tagetCu, sourceCu);
