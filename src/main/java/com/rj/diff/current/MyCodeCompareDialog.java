@@ -406,7 +406,7 @@ public class MyCodeCompareDialog extends DialogWrapper {
             return;
         }
         //leftTextArea.setText(rightTextArea.getText());
-        String reslutJava = ControllerDiffUpdater.updateControllerWithDifferences(rightTextArea.getText(), leftTextArea.getText());
+        String reslutJava = AstDiffUpdater.updateControllerWithDifferences(rightTextArea.getText(), leftTextArea.getText());
         leftTextArea.setText(reslutJava);
         compareCode(null);
     }

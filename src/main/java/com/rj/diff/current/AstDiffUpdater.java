@@ -8,7 +8,6 @@ import com.github.javaparser.ast.ImportDeclaration;
 import com.github.javaparser.ast.body.*;
 import com.github.javaparser.ast.expr.*;
 import com.google.googlejavaformat.java.FormatterException;
-import com.rj.diff.old.UpdaterJavaFileUtilsCurrent;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -18,9 +17,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class ControllerDiffUpdater {
+public class AstDiffUpdater {
 
-    private static Log log = LogFactory.get(ControllerDiffUpdater.class);
+    private static Log log = LogFactory.get(AstDiffUpdater.class);
 
     public static void updateControllerWithDifferences(Path sourceAPath, Path sourceBPath) throws IOException, InterruptedException {
         // 读取文件内容
