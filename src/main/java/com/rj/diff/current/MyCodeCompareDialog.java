@@ -13,6 +13,7 @@ import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.components.JBScrollPane;
 import com.rj.diff.CodeDiffNotifications;
+import com.rj.diff.current.utils.CodeElementDiffer;
 import com.rj.diff.diff_match_patch;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
@@ -31,7 +32,6 @@ import java.awt.event.ActionEvent;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.prefs.Preferences;
@@ -317,26 +317,13 @@ public class MyCodeCompareDialog extends DialogWrapper {
         String rightText = rightTextArea.getText();
 
         if (leftText.isEmpty() || rightText.isEmpty()) {
-            //JOptionPane.showMessageDialog(getWindow(),
-            //        "两侧代码都不能为空", "错误", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
         CompletableFuture.runAsync(() -> {
-            // 使用diff-match-patch计算差异
-            diff_match_patch dmp = new diff_match_patch();
-            LinkedList<diff_match_patch.Diff> diffs = dmp.diff_main(leftText, rightText);
-            dmp.Diff_Timeout = 1.0f;
-            dmp.diff_cleanupSemantic(diffs);
-
-            SwingUtilities.invokeLater(() -> {
-                // 清除之前的高亮
-                leftTextArea.getHighlighter().removeAllHighlights();
-                rightTextArea.getHighlighter().removeAllHighlights();
-
-                // 应用高亮显示差异
-                highlightDifferences(diffs);
-            });
+            // 使用新的代码元素差异对比器
+            CodeElementDiffer differ = new CodeElementDiffer(rightTextArea, addedPainter);
+            differ.highlightDifferences(leftText, rightText);
         });
     }
 
