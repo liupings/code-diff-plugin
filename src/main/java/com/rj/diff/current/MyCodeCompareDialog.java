@@ -54,7 +54,8 @@ public class MyCodeCompareDialog extends DialogWrapper {
     private final Highlighter.HighlightPainter addedPainter;
     private final Highlighter.HighlightPainter removedPainter;
     private boolean isAdjusting = false;
-
+    private JDialog loadingDialog; // 加载遮罩
+    private JProgressBar progressBar; // 进度条动画
 
     public MyCodeCompareDialog(@Nullable Project project, String sourceCode, Path sourceFilePath, VirtualFile currentFile) {
         super(project, true);
@@ -91,8 +92,9 @@ public class MyCodeCompareDialog extends DialogWrapper {
         addTextChangeListener(rightTextArea);
         setupListeners();
         loadPreferences();
+        setupLoadingDialog();
 
-        urlTextField.setText("http://172.16.1.11/api/interface-definition/api/generator/javaBasedByClassName/" + currentFile.getName());
+        urlTextField.setText("http://127.0.0.1:9091/interface-definition/api/generator/javaBasedByClassName/" + currentFile.getName());
     }
 
     @Override
@@ -288,28 +290,65 @@ public class MyCodeCompareDialog extends DialogWrapper {
         };
     }
 
+    private void setupLoadingDialog() {
+        loadingDialog = new JDialog();
+        loadingDialog.setUndecorated(true); // 无边框
+        loadingDialog.setModal(true);
+        loadingDialog.setSize(250, 120);
+        loadingDialog.setLocationRelativeTo(null);
+
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10)); // 添加内边距
+
+        JLabel loadingLabel = new JLabel("数据获取中。。。", JLabel.CENTER);
+        loadingLabel.setFont(new Font("微软雅黑", Font.BOLD, 14));
+        panel.add(loadingLabel, BorderLayout.CENTER);
+
+        // 进度条美化
+        progressBar = new JProgressBar();
+        progressBar.setIndeterminate(true);
+        progressBar.setOpaque(false);  // 透明背景
+        progressBar.setForeground(new Color(50, 150, 250)); // 进度条颜色
+        progressBar.setBackground(new Color(230, 230, 230)); // 背景色
+        progressBar.setBorder(BorderFactory.createEmptyBorder()); // 移除边框
+        panel.add(progressBar, BorderLayout.NORTH);
+
+        loadingDialog.add(panel);
+    }
+
     private void fetchRemoteCode(ActionEvent e) {
         String url = urlTextField.getText().trim();
         if (url.isEmpty()) {
-            //JOptionPane.showMessageDialog(getWindow(), "请输入URL", "错误", JOptionPane.ERROR_MESSAGE);
             CodeDiffNotifications.showError(project, "错误", "请输入URL");
-
             return;
         }
 
-        //fetchButton.setEnabled(false);
+        // 显示加载遮罩，并启动动画
+        SwingUtilities.invokeLater(() -> {
+            loadingDialog.setVisible(true);
+            progressBar.setIndeterminate(true);
+        });
+
         CompletableFuture.supplyAsync(() -> HttpUtil.get(url))
                 .thenAccept(remoteCode -> SwingUtilities.invokeLater(() -> {
                     rightTextArea.setText(remoteCode);
                     compareCode(null);
                     fetchButton.setEnabled(true);
+                    loadingDialog.setVisible(false); // 隐藏加载遮罩
+                    progressBar.setIndeterminate(false); // 关闭动画
                 }))
                 .exceptionally(ex -> {
-                    SwingUtilities.invokeLater(() -> CodeDiffNotifications.showError(project, "错误", "获取远程代码失败: " + ex.getMessage()));
-                    fetchButton.setEnabled(true);
+                    SwingUtilities.invokeLater(() -> {
+                        CodeDiffNotifications.showError(project, "错误", "获取远程代码失败: " + ex.getMessage());
+                        fetchButton.setEnabled(true);
+                        loadingDialog.setVisible(false); // 隐藏加载遮罩
+                        progressBar.setIndeterminate(false); // 关闭动画
+                    });
                     return null;
                 });
     }
+
+
 
     //代码元素对比
     private void compareCode(ActionEvent e) {
