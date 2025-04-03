@@ -14,7 +14,6 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.components.JBScrollPane;
 import com.rj.diff.CodeDiffNotifications;
 import com.rj.diff.current.utils.CodeElementDiffer;
-import com.rj.diff.diff_match_patch;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rsyntaxtextarea.Theme;
@@ -24,50 +23,66 @@ import org.jetbrains.annotations.Nullable;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultHighlighter;
 import javax.swing.text.Highlighter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.awt.event.AdjustmentEvent;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.prefs.Preferences;
 
+/**
+ * 代码对比对话框，用于比较本地代码与远程获取的代码差异
+ * 提供代码对比、差异高亮、代码应用和保存功能
+ */
 public class MyCodeCompareDialog extends DialogWrapper {
-    private final RSyntaxTextArea leftTextArea;
-    private final RSyntaxTextArea rightTextArea;
-    private final JButton fetchButton;
-    private final JButton compareButton;
-    private final JButton applyButton;
-    //private JPanel mainPanel;
-    private final Project project;
-    //private final JButton applySelectedButton;
-    private final JButton saveButton;
-    private Point lastScrollPosition;
-    private final VirtualFile currentFile;
-    private final JTextField urlTextField;
-    private final JComboBox<String> languageComboBox;
-    private final Path sourceFilePath;
-    private final Highlighter.HighlightPainter addedPainter;
-    private final Highlighter.HighlightPainter removedPainter;
-    private boolean isAdjusting = false;
-    private JDialog loadingDialog; // 加载遮罩
-    private JProgressBar progressBar; // 进度条动画
+    // UI组件
+    private final RSyntaxTextArea leftTextArea;  // 左侧文本区域(本地代码)
+    private final RSyntaxTextArea rightTextArea; // 右侧文本区域(远程代码)
+    private final JButton fetchButton;           // 获取远程代码按钮
+    private final JButton compareButton;         // 对比代码按钮
+    private final JButton applyButton;           // 应用所有更改按钮
+    private final JButton saveButton;            // 保存按钮
+    private final JTextField urlTextField;       // URL输入框
+    private final JComboBox<String> languageComboBox; // 语言选择框
 
+    // 高亮相关
+    private final Highlighter.HighlightPainter addedPainter;   // 新增代码高亮
+    private final Highlighter.HighlightPainter removedPainter; // 删除代码高亮
+
+    // 状态管理
+    private boolean isAdjusting = false;         // 滚动同步状态标志
+    private Point lastScrollPosition;            // 最后滚动位置
+    private JDialog loadingDialog;               // 加载对话框
+    private JProgressBar progressBar;            // 进度条
+
+    // 项目相关
+    private final Project project;               // 当前项目
+    private final VirtualFile currentFile;       // 当前文件
+    private final Path sourceFilePath;           // 源文件路径
+
+    /**
+     * 构造函数
+     * @param project 当前项目
+     * @param sourceCode 源代码内容
+     * @param sourceFilePath 源文件路径
+     * @param currentFile 当前文件
+     */
     public MyCodeCompareDialog(@Nullable Project project, String sourceCode, Path sourceFilePath, VirtualFile currentFile) {
         super(project, true);
-        // 设置对话框初始大小
-        setSize(1500, 800);
-        // 允许调整大小
-        setResizable(true);
+        this.project = project;
         this.sourceFilePath = sourceFilePath;
+        this.currentFile = currentFile;
+
+        // 初始化UI设置
+        setSize(1500, 800);
+        setResizable(true);
         setTitle("代码对比");
         setModal(true);
-        this.project = project;
-        this.currentFile = currentFile;
+
         // 初始化UI组件
         leftTextArea = createSyntaxTextArea();
         rightTextArea = createSyntaxTextArea();
@@ -76,17 +91,16 @@ public class MyCodeCompareDialog extends DialogWrapper {
         fetchButton = new JButton("获取快速开发平台代码");
         compareButton = new JButton("对比代码");
         applyButton = new JButton("应用");
-        //applySelectedButton = new JButton("应用选中");
         saveButton = new JButton("保存");
         urlTextField = new JTextField(30);
-        //languageComboBox = new ComboBox<>(new String[]{"Java", "Kotlin", "Python", "JavaScript", "HTML", "XML", "SQL", "JSON"});
         languageComboBox = new ComboBox<>(new String[]{"Java"});
         languageComboBox.setVisible(Boolean.FALSE);
 
-        // 设置高亮颜色
+        // 初始化高亮颜色
         addedPainter = new DefaultHighlighter.DefaultHighlightPainter(new Color(218, 53, 53, 119));
         removedPainter = new DefaultHighlighter.DefaultHighlightPainter(new Color(243, 243, 24, 100));
 
+        // 初始化对话框
         init();
         addTextChangeListener(leftTextArea);
         addTextChangeListener(rightTextArea);
@@ -94,6 +108,7 @@ public class MyCodeCompareDialog extends DialogWrapper {
         loadPreferences();
         setupLoadingDialog();
 
+        // 设置默认URL
         urlTextField.setText("http://127.0.0.1:9091/interface-definition/api/generator/javaBasedByClassName/" + currentFile.getName());
     }
 
@@ -102,42 +117,46 @@ public class MyCodeCompareDialog extends DialogWrapper {
         super.dispose();
     }
 
+    /**
+     * 创建语法高亮文本区域
+     * @return 配置好的RSyntaxTextArea实例
+     */
     private RSyntaxTextArea createSyntaxTextArea() {
         RSyntaxTextArea textArea = new RSyntaxTextArea();
         textArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JAVA);
         textArea.setCodeFoldingEnabled(true);
         textArea.setAntiAliasingEnabled(true);
-
-        // 启用边界线显示
-        //textArea.setMarginLineEnabled(true);
-        // 设置边界线的位置，通常是 80 或者 100 字符处
-        //textArea.setMarginLinePosition(80);
-        // 启用清除空白行中的空白字符
         textArea.setClearWhitespaceLinesEnabled(true);
-        // 使用 IDE 的字体设置
+
+        // 使用IDE的字体设置
         Font editorFont = EditorColorsManager.getInstance().getGlobalScheme().getFont(EditorFontType.PLAIN);
         textArea.setFont(editorFont);
-        // 根据 IDE 主题选择合适的语法高亮主题
+
+        // 根据IDE主题设置语法高亮主题
+        applyThemeBasedOnIDESettings(textArea);
+
+        return textArea;
+    }
+
+    /**
+     * 根据IDE主题设置应用相应的语法高亮主题
+     * @param textArea 文本区域
+     */
+    private void applyThemeBasedOnIDESettings(RSyntaxTextArea textArea) {
         try {
             boolean isDarkTheme = LafManager.getInstance().getCurrentUIThemeLookAndFeel().isDark();
-            // 或者使用:
-            // boolean isDarkTheme = "Darcula".equals(LafManager.getInstance().getCurrentTheme().getName());
 
             if (isDarkTheme) {
                 Theme theme = Theme.load(getClass().getResourceAsStream("/org/fife/ui/rsyntaxtextarea/themes/dark.xml"));
                 theme.apply(textArea);
+                textArea.setBackground(new Color(43, 43, 43));
+                textArea.setSelectionColor(new Color(59, 117, 231));
+                textArea.setMargin(new Insets(0, 3, 0, 0));
+                textArea.setCaretColor(Color.WHITE);
             }
-
-            textArea.setBackground(new Color(43, 43, 43));
-            textArea.setSelectionColor(new Color(59, 117, 231));
-            textArea.setMargin(new Insets(0, 3, 0, 0));
-            textArea.setCaretColor(Color.WHITE); // 设置光标颜色
-
         } catch (IOException e) {
             // 使用默认主题
         }
-
-        return textArea;
     }
 
     @Override
@@ -146,82 +165,111 @@ public class MyCodeCompareDialog extends DialogWrapper {
         mainPanel.setBorder(BorderFactory.createEmptyBorder());
 
         // 顶部控制面板
+        JPanel controlPanel = createControlPanel();
+
+        // 代码对比面板
+        JPanel codePanel = createCodeComparePanel();
+
+        mainPanel.add(controlPanel, BorderLayout.NORTH);
+        mainPanel.add(codePanel, BorderLayout.CENTER);
+
+        return mainPanel;
+    }
+
+    /**
+     * 创建控制面板
+     * @return 配置好的控制面板
+     */
+    private JPanel createControlPanel() {
         JPanel controlPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         controlPanel.add(new JLabel("URL:"));
         controlPanel.add(urlTextField);
         controlPanel.add(fetchButton);
-        //controlPanel.add(new JLabel("语言:"));
         controlPanel.add(languageComboBox);
         controlPanel.add(compareButton);
+        return controlPanel;
+    }
 
-        // 代码对比面板
+    /**
+     * 创建代码对比面板
+     * @return 配置好的代码对比面板
+     */
+    private JPanel createCodeComparePanel() {
         JPanel codePanel = new JPanel(new GridLayout());
-        //codePanel.add(createTextAreaPanel("当前代码", leftTextArea));
-        //codePanel.add(createTextAreaPanel("远程代码", rightTextArea));
 
         RTextScrollPane currentCode = new RTextScrollPane(createTextAreaPanel("当前代码", leftTextArea));
         RTextScrollPane rightCode = new RTextScrollPane(createTextAreaPanel("快速开发平台代码", rightTextArea));
+
         codePanel.add(currentCode);
         codePanel.add(rightCode);
 
-        JScrollBar leftScrollBar = currentCode.getVerticalScrollBar();
-        JScrollBar rightScrollBar = rightCode.getVerticalScrollBar();
+        setupScrollSync(currentCode, rightCode);
 
-        JScrollBar horizontalScrollBar = currentCode.getHorizontalScrollBar();
-        JScrollBar horizontalScrollBar1 = rightCode.getHorizontalScrollBar();
-        horizontalScrollBar.setUnitIncrement(30);
-        horizontalScrollBar1.setBlockIncrement(30);
+        return codePanel;
+    }
 
-        // 设置滚动步长（值可以调整）
-        int unitIncrement = 30;  // 单位增量，控制鼠标滚轮滚动速度
-        int blockIncrement = 100; // 块增量，控制 PgUp/PgDn 速度
+    /**
+     * 设置滚动同步
+     * @param leftScrollPane 左侧滚动面板
+     * @param rightScrollPane 右侧滚动面板
+     */
+    private void setupScrollSync(RTextScrollPane leftScrollPane, RTextScrollPane rightScrollPane) {
+        JScrollBar leftScrollBar = leftScrollPane.getVerticalScrollBar();
+        JScrollBar rightScrollBar = rightScrollPane.getVerticalScrollBar();
+
+        JScrollBar leftHScrollBar = leftScrollPane.getHorizontalScrollBar();
+        JScrollBar rightHScrollBar = rightScrollPane.getHorizontalScrollBar();
+
+        // 设置滚动步长
+        int unitIncrement = 30;
+        int blockIncrement = 100;
 
         leftScrollBar.setUnitIncrement(unitIncrement);
         rightScrollBar.setUnitIncrement(unitIncrement);
         leftScrollBar.setBlockIncrement(blockIncrement);
         rightScrollBar.setBlockIncrement(blockIncrement);
 
-        // 添加同步监听  防止死循环
-        leftScrollBar.addAdjustmentListener(e -> {
-            if (!isAdjusting && !e.getValueIsAdjusting()) {
-                isAdjusting = true;
-                rightScrollBar.setValue(e.getValue());
-                isAdjusting = false;
-            }
-        });
+        leftHScrollBar.setUnitIncrement(30);
+        rightHScrollBar.setBlockIncrement(30);
 
-        rightScrollBar.addAdjustmentListener(e -> {
-            if (!isAdjusting && !e.getValueIsAdjusting()) {
-                isAdjusting = true;
-                leftScrollBar.setValue(e.getValue());
-                isAdjusting = false;
-            }
-        });
+        // 添加同步监听
+        leftScrollBar.addAdjustmentListener(e -> syncScrollBars(e, rightScrollBar));
+        rightScrollBar.addAdjustmentListener(e -> syncScrollBars(e, leftScrollBar));
+    }
 
-        mainPanel.add(controlPanel, BorderLayout.NORTH);
-        mainPanel.add(codePanel, BorderLayout.CENTER);
-        //this.mainPanel = mainPanel;
-        return mainPanel;
+    /**
+     * 同步滚动条
+     * @param event 调整事件
+     * @param targetScrollBar 目标滚动条
+     */
+    private void syncScrollBars(AdjustmentEvent event, JScrollBar targetScrollBar) {
+        if (!isAdjusting && !event.getValueIsAdjusting()) {
+            isAdjusting = true;
+            targetScrollBar.setValue(event.getValue());
+            isAdjusting = false;
+        }
     }
 
     @Override
     protected JComponent createSouthPanel() {
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        //buttonPanel.add(applySelectedButton);
         buttonPanel.add(applyButton);
         buttonPanel.add(saveButton);
 
-        // 添加默认的OK/Cancel按钮
         JPanel southPanel = new JPanel(new BorderLayout());
         southPanel.add(buttonPanel, BorderLayout.CENTER);
-        //southPanel.add(super.createSouthPanel(), BorderLayout.WEST);
 
         return southPanel;
     }
 
+    /**
+     * 创建文本区域面板
+     * @param title 面板标题
+     * @param textArea 文本区域
+     * @return 配置好的面板
+     */
     private JPanel createTextAreaPanel(String title, RSyntaxTextArea textArea) {
         JPanel panel = new JPanel(new BorderLayout());
-        //panel.setBorder(BorderFactory.createTitledBorder(title));
         panel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), title));
         JBScrollPane scrollPane = new JBScrollPane(textArea);
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
@@ -229,11 +277,13 @@ public class MyCodeCompareDialog extends DialogWrapper {
         return panel;
     }
 
+    /**
+     * 设置事件监听器
+     */
     private void setupListeners() {
         fetchButton.addActionListener(this::fetchRemoteCode);
         compareButton.addActionListener(this::compareCode);
         applyButton.addActionListener(this::applyAllChanges);
-        //applySelectedButton.addActionListener(this::applySelectedChanges);
         saveButton.addActionListener(this::saveToSourceFile);
 
         languageComboBox.addActionListener(e -> {
@@ -243,79 +293,56 @@ public class MyCodeCompareDialog extends DialogWrapper {
             rightTextArea.setSyntaxEditingStyle(syntaxStyle);
             savePreferences();
         });
-
-        // 自动格式化代码监听
-        //leftTextArea.getDocument().addDocumentListener(new DocumentListener() {
-        //    @Override
-        //    public void insertUpdate(DocumentEvent e) {
-        //        autoFormatCode(leftTextArea);
-        //    }
-        //
-        //    @Override
-        //    public void removeUpdate(DocumentEvent e) {
-        //        autoFormatCode(leftTextArea);
-        //    }
-        //
-        //    @Override
-        //    public void changedUpdate(DocumentEvent e) {
-        //        autoFormatCode(leftTextArea);
-        //    }
-        //});
     }
 
-    //自动格式化 Java 代码
-    //private void autoFormatCode(RSyntaxTextArea textArea) {
-    //    //       try {
-    //    //String formattedCode = new Formatter().formatSource(textArea.getText());
-    //    //           textArea.setText(formattedCode);
-    //    //       } catch (FormatterException e) {
-    //    //           CodeDiffNotifications.showError(project, "错误", "格式化失败");
-    //    //
-    //    //       }
-    //}
-
+    /**
+     * 根据语言获取语法高亮样式
+     * @param language 编程语言
+     * @return 语法高亮样式常量
+     */
     private String getSyntaxStyleForLanguage(String language) {
         if (language == null) return SyntaxConstants.SYNTAX_STYLE_NONE;
 
         return switch (language) {
             case "Java" -> SyntaxConstants.SYNTAX_STYLE_JAVA;
-            //case "Kotlin" -> SyntaxConstants.SYNTAX_STYLE_KOTLIN;
-            //case "Python" -> SyntaxConstants.SYNTAX_STYLE_PYTHON;
             //case "JavaScript" -> SyntaxConstants.SYNTAX_STYLE_JAVASCRIPT;
             //case "HTML" -> SyntaxConstants.SYNTAX_STYLE_HTML;
-            //case "XML" -> SyntaxConstants.SYNTAX_STYLE_XML;
-            //case "SQL" -> SyntaxConstants.SYNTAX_STYLE_SQL;
-            //case "JSON" -> SyntaxConstants.SYNTAX_STYLE_JSON;
             default -> SyntaxConstants.SYNTAX_STYLE_NONE;
         };
     }
 
+    /**
+     * 设置加载对话框
+     */
     private void setupLoadingDialog() {
         loadingDialog = new JDialog();
-        loadingDialog.setUndecorated(true); // 无边框
+        loadingDialog.setUndecorated(true);
         loadingDialog.setModal(true);
         loadingDialog.setSize(250, 120);
         loadingDialog.setLocationRelativeTo(null);
 
         JPanel panel = new JPanel(new BorderLayout());
-        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10)); // 添加内边距
+        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         JLabel loadingLabel = new JLabel("数据获取中。。。", JLabel.CENTER);
         loadingLabel.setFont(new Font("微软雅黑", Font.BOLD, 14));
         panel.add(loadingLabel, BorderLayout.CENTER);
 
-        // 进度条美化
         progressBar = new JProgressBar();
         progressBar.setIndeterminate(true);
-        progressBar.setOpaque(false);  // 透明背景
-        progressBar.setForeground(new Color(50, 150, 250)); // 进度条颜色
-        progressBar.setBackground(new Color(230, 230, 230)); // 背景色
-        progressBar.setBorder(BorderFactory.createEmptyBorder()); // 移除边框
+        progressBar.setOpaque(false);
+        progressBar.setForeground(new Color(50, 150, 250));
+        progressBar.setBackground(new Color(230, 230, 230));
+        progressBar.setBorder(BorderFactory.createEmptyBorder());
         panel.add(progressBar, BorderLayout.NORTH);
 
         loadingDialog.add(panel);
     }
 
+    /**
+     * 获取远程代码
+     * @param e 动作事件
+     */
     private void fetchRemoteCode(ActionEvent e) {
         String url = urlTextField.getText().trim();
         if (url.isEmpty()) {
@@ -323,34 +350,50 @@ public class MyCodeCompareDialog extends DialogWrapper {
             return;
         }
 
-        // 显示加载遮罩，并启动动画
-        SwingUtilities.invokeLater(() -> {
-            loadingDialog.setVisible(true);
-            progressBar.setIndeterminate(true);
-        });
+        showLoadingDialog();
+        fetchButton.setEnabled(false);
 
         CompletableFuture.supplyAsync(() -> HttpUtil.get(url))
                 .thenAccept(remoteCode -> SwingUtilities.invokeLater(() -> {
                     rightTextArea.setText(remoteCode);
                     compareCode(null);
+                    hideLoadingDialog();
                     fetchButton.setEnabled(true);
-                    loadingDialog.setVisible(false); // 隐藏加载遮罩
-                    progressBar.setIndeterminate(false); // 关闭动画
                 }))
                 .exceptionally(ex -> {
                     SwingUtilities.invokeLater(() -> {
                         CodeDiffNotifications.showError(project, "错误", "获取远程代码失败: " + ex.getMessage());
+                        hideLoadingDialog();
                         fetchButton.setEnabled(true);
-                        loadingDialog.setVisible(false); // 隐藏加载遮罩
-                        progressBar.setIndeterminate(false); // 关闭动画
                     });
                     return null;
                 });
     }
 
+    /**
+     * 显示加载对话框
+     */
+    private void showLoadingDialog() {
+        SwingUtilities.invokeLater(() -> {
+            loadingDialog.setVisible(true);
+            progressBar.setIndeterminate(true);
+        });
+    }
 
+    /**
+     * 隐藏加载对话框
+     */
+    private void hideLoadingDialog() {
+        SwingUtilities.invokeLater(() -> {
+            loadingDialog.setVisible(false);
+            progressBar.setIndeterminate(false);
+        });
+    }
 
-    //代码元素对比
+    /**
+     * 对比代码
+     * @param e 动作事件
+     */
     private void compareCode(ActionEvent e) {
         String leftText = leftTextArea.getText();
         String rightText = rightTextArea.getText();
@@ -360,112 +403,84 @@ public class MyCodeCompareDialog extends DialogWrapper {
         }
 
         CompletableFuture.runAsync(() -> {
-            // 使用新的代码元素差异对比器
             CodeElementDiffer differ = new CodeElementDiffer(rightTextArea, addedPainter);
             differ.highlightDifferences(leftText, rightText);
         });
     }
 
-    private void highlightDifferences(List<diff_match_patch.Diff> diffs) {
-        try {
-            int leftPos = 0;
-            int rightPos = 0;
-
-            for (diff_match_patch.Diff diff : diffs) {
-                String text = diff.text;
-                int length = text.length();
-
-                switch (diff.operation) {
-                    case INSERT:
-                        // 在右侧显示新增内容
-                        rightTextArea.getHighlighter().addHighlight(rightPos, rightPos + length, addedPainter);
-                        rightPos += length;
-                        break;
-                    case DELETE:
-                        // 在左侧显示删除内容
-                        leftTextArea.getHighlighter().addHighlight(
-                                leftPos, leftPos + length, removedPainter);
-                        leftPos += length;
-                        break;
-                    case EQUAL:
-                        leftPos += length;
-                        rightPos += length;
-                        break;
-                }
-            }
-        } catch (BadLocationException ex) {
-            ex.printStackTrace();
-        }
-    }
-
+    /**
+     * 应用所有更改
+     * @param e 动作事件
+     */
     private void applyAllChanges(ActionEvent e) {
         if (StrUtil.isBlank(rightTextArea.getText())) {
             CodeDiffNotifications.showError(project, "错误", "没有获取到远程内容");
             return;
         }
-        //leftTextArea.setText(rightTextArea.getText());
-        String reslutJava = AstDiffUpdater.updateControllerWithDifferences(project,rightTextArea.getText(), leftTextArea.getText());
-        leftTextArea.setText(reslutJava);
+
+        String resultJava = AstDiffUpdater.updateControllerWithDifferences(project, rightTextArea.getText(), leftTextArea.getText());
+        leftTextArea.setText(resultJava);
         compareCode(null);
     }
 
+    /**
+     * 保存到源文件
+     * @param e 动作事件
+     */
     private void saveToSourceFile(ActionEvent e) {
         if (sourceFilePath == null) {
-            //JOptionPane.showMessageDialog(getWindow(), "未指定源文件路径", "错误", JOptionPane.ERROR_MESSAGE);
             CodeDiffNotifications.showWarning(project, "警告", "未指定源文件路径");
             return;
         }
 
         try {
-            // 保存文件内容到磁盘
             Files.writeString(sourceFilePath, leftTextArea.getText());
-
-            // 获取对应的 VirtualFile
-            VirtualFile virtualFile = LocalFileSystem.getInstance().refreshAndFindFileByPath(sourceFilePath.toString());
-            if (virtualFile != null) {
-                // 通知文件系统文件已更改
-                virtualFile.refresh(false, false);
-
-                // 通知编辑器重新加载文件
-                FileDocumentManager.getInstance().reloadFiles(virtualFile);
-
-                // 如果需要，可以刷新整个项目
-                // Project project = getProject();
-                // if (project != null) {
-                //     RefreshQueue.getInstance().refresh(true, true, () -> {}, virtualFile);
-                // }
-            }
-
-            //JOptionPane.showMessageDialog(getWindow(), "保存成功", "成功", JOptionPane.INFORMATION_MESSAGE);
+            refreshFileSystem();
             CodeDiffNotifications.showInfo(project, "提示", "保存成功");
-
             dispose();
         } catch (IOException ex) {
-            //JOptionPane.showMessageDialog(getWindow(), "保存失败: " + ex.getMessage(), "错误", JOptionPane.ERROR_MESSAGE);
             CodeDiffNotifications.showError(project, "错误", "保存失败");
-
         }
     }
 
+    /**
+     * 刷新文件系统
+     */
+    private void refreshFileSystem() throws IOException {
+        VirtualFile virtualFile = LocalFileSystem.getInstance().refreshAndFindFileByPath(sourceFilePath.toString());
+        if (virtualFile != null) {
+            virtualFile.refresh(false, false);
+            FileDocumentManager.getInstance().reloadFiles(virtualFile);
+        }
+    }
+
+    /**
+     * 保存偏好设置
+     */
     private void savePreferences() {
         Preferences prefs = Preferences.userNodeForPackage(MyCodeCompareDialog.class);
         prefs.put("lastUrl", urlTextField.getText());
         prefs.put("lastLanguage", (String) languageComboBox.getSelectedItem());
     }
 
+    /**
+     * 加载偏好设置
+     */
     private void loadPreferences() {
         Preferences prefs = Preferences.userNodeForPackage(MyCodeCompareDialog.class);
         urlTextField.setText(prefs.get("lastUrl", ""));
         String lastLanguage = prefs.get("lastLanguage", "Java");
         languageComboBox.setSelectedItem(lastLanguage);
 
-        // 设置初始语法高亮
         String syntaxStyle = getSyntaxStyleForLanguage(lastLanguage);
         leftTextArea.setSyntaxEditingStyle(syntaxStyle);
         rightTextArea.setSyntaxEditingStyle(syntaxStyle);
     }
 
-    // 文本变化监听器
+    /**
+     * 添加文本变化监听器
+     * @param textArea 文本区域
+     */
     private void addTextChangeListener(JTextArea textArea) {
         textArea.getDocument().addDocumentListener(new DocumentListener() {
             @Override
