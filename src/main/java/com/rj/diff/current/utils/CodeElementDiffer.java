@@ -303,17 +303,74 @@ public class CodeElementDiffer {
     //}
 
     private void highlightNode(Node node) throws BadLocationException {
-        if (node.getRange().isPresent()) {
-            // 获取注解的起始行和结束行
-            int startLine = node.getRange().get().begin.line - 1; // 转换为0-based
-            int endLine = node.getRange().get().end.line - 1;
-
-            // 获取起始行的起始偏移量和结束行的结束偏移量
-            int highlightStart = rightTextArea.getLineStartOffset(startLine);
-            int highlightEnd = rightTextArea.getLineEndOffset(endLine);
-
-            // 高亮从注解开始到右括号结束的整个范围
-            rightTextArea.getHighlighter().addHighlight(highlightStart, highlightEnd, addedPainter);
+        if (!node.getRange().isPresent()) {
+            return;
         }
+
+        // 获取节点的起始和结束行号
+        int startLine = node.getRange().get().begin.line - 1;
+        int endLine = node.getRange().get().end.line - 1;
+
+        // 处理不同类型的节点
+        if (node instanceof MethodDeclaration) {
+            MethodDeclaration method = (MethodDeclaration) node;
+
+            // 1. 包含方法上的所有注解
+            if (!method.getAnnotations().isEmpty()) {
+                int firstAnnotationLine = method.getAnnotations().get(0)
+                        .getRange().get().begin.line - 1;
+                startLine = Math.min(startLine, firstAnnotationLine);
+            }
+
+            // 2. 包含整个方法体
+            if (method.getBody().isPresent()) {
+                endLine = method.getBody().get().getRange().get().end.line - 1;
+            }
+        }
+        // 处理注解节点（如@Parameter）
+        else if (node instanceof AnnotationExpr) {
+            AnnotationExpr annotation = (AnnotationExpr) node;
+
+            // 对于多行注解，确保获取完整的结束位置
+            if (annotation instanceof NormalAnnotationExpr) {
+                NormalAnnotationExpr normalAnnotation = (NormalAnnotationExpr) annotation;
+                // 获取注解的右括号位置
+                if (normalAnnotation.getTokenRange().isPresent()) {
+                    int closingBraceLine = normalAnnotation.getTokenRange().get()
+                            .getEnd().getRange().get().begin.line - 1;
+                    endLine = Math.max(endLine, closingBraceLine);
+                }
+            }
+            // 处理单成员注解（如@Parameter(name="value")）
+            else if (annotation instanceof SingleMemberAnnotationExpr) {
+                SingleMemberAnnotationExpr singleAnnotation = (SingleMemberAnnotationExpr) annotation;
+                // 获取完整的注解结束位置
+                if (singleAnnotation.getTokenRange().isPresent()) {
+                    int closingParenLine = singleAnnotation.getTokenRange().get()
+                            .getEnd().getRange().get().begin.line - 1;
+                    endLine = Math.max(endLine, closingParenLine);
+                }
+            }
+            // 处理标记注解（如@Deprecated）
+            else if (annotation instanceof MarkerAnnotationExpr) {
+                // 不需要特殊处理，保持原样
+            }
+        }
+        // 处理参数节点
+        else if (node instanceof Parameter) {
+            Parameter parameter = (Parameter) node;
+            // 包含参数上的所有注解
+            if (!parameter.getAnnotations().isEmpty()) {
+                int firstAnnotationLine = parameter.getAnnotations().get(0).getRange().get().begin.line -2 ;
+                startLine = Math.min(startLine, firstAnnotationLine);
+            }
+        }
+
+        // 计算高亮范围
+        int highlightStart = rightTextArea.getLineStartOffset(startLine);
+        int highlightEnd = rightTextArea.getLineEndOffset(endLine);
+
+        // 添加高亮
+        rightTextArea.getHighlighter().addHighlight(highlightStart, highlightEnd, addedPainter);
     }
 }
