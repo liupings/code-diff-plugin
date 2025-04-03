@@ -57,7 +57,6 @@ public class MyCodeCompareDialog extends DialogWrapper {
     private boolean isAdjusting = false;         // 滚动同步状态标志
     private Point lastScrollPosition;            // 最后滚动位置
     private JDialog loadingDialog;               // 加载对话框
-    private JProgressBar progressBar;            // 进度条
 
     // 项目相关
     private final Project project;               // 当前项目
@@ -66,10 +65,11 @@ public class MyCodeCompareDialog extends DialogWrapper {
 
     /**
      * 构造函数
-     * @param project 当前项目
-     * @param sourceCode 源代码内容
+     *
+     * @param project        当前项目
+     * @param sourceCode     源代码内容
      * @param sourceFilePath 源文件路径
-     * @param currentFile 当前文件
+     * @param currentFile    当前文件
      */
     public MyCodeCompareDialog(@Nullable Project project, String sourceCode, Path sourceFilePath, VirtualFile currentFile) {
         super(project, true);
@@ -119,6 +119,7 @@ public class MyCodeCompareDialog extends DialogWrapper {
 
     /**
      * 创建语法高亮文本区域
+     *
      * @return 配置好的RSyntaxTextArea实例
      */
     private RSyntaxTextArea createSyntaxTextArea() {
@@ -140,6 +141,7 @@ public class MyCodeCompareDialog extends DialogWrapper {
 
     /**
      * 根据IDE主题设置应用相应的语法高亮主题
+     *
      * @param textArea 文本区域
      */
     private void applyThemeBasedOnIDESettings(RSyntaxTextArea textArea) {
@@ -178,6 +180,7 @@ public class MyCodeCompareDialog extends DialogWrapper {
 
     /**
      * 创建控制面板
+     *
      * @return 配置好的控制面板
      */
     private JPanel createControlPanel() {
@@ -192,6 +195,7 @@ public class MyCodeCompareDialog extends DialogWrapper {
 
     /**
      * 创建代码对比面板
+     *
      * @return 配置好的代码对比面板
      */
     private JPanel createCodeComparePanel() {
@@ -210,7 +214,8 @@ public class MyCodeCompareDialog extends DialogWrapper {
 
     /**
      * 设置滚动同步
-     * @param leftScrollPane 左侧滚动面板
+     *
+     * @param leftScrollPane  左侧滚动面板
      * @param rightScrollPane 右侧滚动面板
      */
     private void setupScrollSync(RTextScrollPane leftScrollPane, RTextScrollPane rightScrollPane) {
@@ -239,7 +244,8 @@ public class MyCodeCompareDialog extends DialogWrapper {
 
     /**
      * 同步滚动条
-     * @param event 调整事件
+     *
+     * @param event           调整事件
      * @param targetScrollBar 目标滚动条
      */
     private void syncScrollBars(AdjustmentEvent event, JScrollBar targetScrollBar) {
@@ -264,7 +270,8 @@ public class MyCodeCompareDialog extends DialogWrapper {
 
     /**
      * 创建文本区域面板
-     * @param title 面板标题
+     *
+     * @param title    面板标题
      * @param textArea 文本区域
      * @return 配置好的面板
      */
@@ -297,6 +304,7 @@ public class MyCodeCompareDialog extends DialogWrapper {
 
     /**
      * 根据语言获取语法高亮样式
+     *
      * @param language 编程语言
      * @return 语法高亮样式常量
      */
@@ -318,29 +326,73 @@ public class MyCodeCompareDialog extends DialogWrapper {
         loadingDialog = new JDialog();
         loadingDialog.setUndecorated(true);
         loadingDialog.setModal(true);
-        loadingDialog.setSize(250, 120);
+        loadingDialog.setSize(150, 90);  // 稍微加大尺寸
         loadingDialog.setLocationRelativeTo(null);
+        loadingDialog.setLayout(new BorderLayout());
+        // 设置对话框背景完全透明
+        loadingDialog.setBackground(new Color(0, 0, 0, 0));
 
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        // 主面板 - 添加圆角和阴影效果
+        JPanel mainPanel = new JPanel(new BorderLayout()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2d = (Graphics2D) g.create();
 
-        JLabel loadingLabel = new JLabel("数据获取中。。。", JLabel.CENTER);
-        loadingLabel.setFont(new Font("微软雅黑", Font.BOLD, 14));
-        panel.add(loadingLabel, BorderLayout.CENTER);
+                // 设置透明度 (0.7f表示70%不透明)
+                g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
 
-        progressBar = new JProgressBar();
-        progressBar.setIndeterminate(true);
-        progressBar.setOpaque(false);
-        progressBar.setForeground(new Color(50, 150, 250));
-        progressBar.setBackground(new Color(230, 230, 230));
-        progressBar.setBorder(BorderFactory.createEmptyBorder());
-        panel.add(progressBar, BorderLayout.NORTH);
+                // 抗锯齿
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-        loadingDialog.add(panel);
+                // 绘制圆角背景
+                g2d.setColor(new Color(122, 138, 153));  // 浅灰色背景
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 20, 20);
+
+                // 绘制边框
+                g2d.setColor(new Color(122, 138, 153));  // 浅灰色边框
+                g2d.setStroke(new BasicStroke(1.5f));
+                g2d.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 20, 20);
+
+                g2d.dispose();
+            }
+        };
+        mainPanel.setBorder(BorderFactory.createEmptyBorder());
+        mainPanel.setOpaque(false);
+
+        // 加载图标 (可以使用自定义图标或系统图标)
+        JLabel loadingIcon = new JLabel(new ImageIcon(getClass().getResource("/icons/loading.gif")));
+        loadingIcon.setHorizontalAlignment(JLabel.CENTER);
+
+        // 如果没有GIF资源，可以使用旋转的JLabel替代
+        if (loadingIcon.getIcon() == null) {
+            loadingIcon = new JLabel("⏳");  // 沙漏emoji作为后备
+            loadingIcon.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 24));
+        }
+
+        // 加载文本
+        JLabel loadingLabel = new JLabel("数据加载中...", JLabel.CENTER);
+        loadingLabel.setFont(new Font("微软雅黑", Font.BOLD, 16));
+        loadingLabel.setForeground(new Color(169, 183, 193));  // 深灰色文字
+
+        // 布局组件
+        JPanel contentPanel = new JPanel(new BorderLayout(0, 15));
+        contentPanel.setOpaque(false);
+
+        contentPanel.add(loadingIcon, BorderLayout.NORTH);
+        contentPanel.add(loadingLabel, BorderLayout.CENTER);
+
+        mainPanel.add(contentPanel, BorderLayout.CENTER);
+        loadingDialog.add(mainPanel);
+
+        // 添加轻微阴影效果
+        loadingDialog.setBackground(new Color(0, 0, 0, 0));  // 透明背景
+        loadingDialog.setOpacity(0.95f);  // 轻微透明
     }
 
     /**
      * 获取远程代码
+     *
      * @param e 动作事件
      */
     private void fetchRemoteCode(ActionEvent e) {
@@ -374,24 +426,19 @@ public class MyCodeCompareDialog extends DialogWrapper {
      * 显示加载对话框
      */
     private void showLoadingDialog() {
-        SwingUtilities.invokeLater(() -> {
-            loadingDialog.setVisible(true);
-            progressBar.setIndeterminate(true);
-        });
+        SwingUtilities.invokeLater(() -> loadingDialog.setVisible(true));
     }
 
     /**
      * 隐藏加载对话框
      */
     private void hideLoadingDialog() {
-        SwingUtilities.invokeLater(() -> {
-            loadingDialog.setVisible(false);
-            progressBar.setIndeterminate(false);
-        });
+        SwingUtilities.invokeLater(() -> loadingDialog.setVisible(false));
     }
 
     /**
      * 对比代码
+     *
      * @param e 动作事件
      */
     private void compareCode(ActionEvent e) {
@@ -410,6 +457,7 @@ public class MyCodeCompareDialog extends DialogWrapper {
 
     /**
      * 应用所有更改
+     *
      * @param e 动作事件
      */
     private void applyAllChanges(ActionEvent e) {
@@ -425,6 +473,7 @@ public class MyCodeCompareDialog extends DialogWrapper {
 
     /**
      * 保存到源文件
+     *
      * @param e 动作事件
      */
     private void saveToSourceFile(ActionEvent e) {
@@ -479,6 +528,7 @@ public class MyCodeCompareDialog extends DialogWrapper {
 
     /**
      * 添加文本变化监听器
+     *
      * @param textArea 文本区域
      */
     private void addTextChangeListener(JTextArea textArea) {
