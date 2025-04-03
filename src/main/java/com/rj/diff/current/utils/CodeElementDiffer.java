@@ -1,6 +1,7 @@
 package com.rj.diff.current.utils;
 
 import com.github.javaparser.JavaParser;
+import com.github.javaparser.Range;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.ImportDeclaration;
 import com.github.javaparser.ast.Node;
@@ -311,20 +312,49 @@ public class CodeElementDiffer {
         int startLine = node.getRange().get().begin.line - 1;
         int endLine = node.getRange().get().end.line - 1;
 
-        // 处理不同类型的节点
-        if (node instanceof MethodDeclaration) {
-            MethodDeclaration method = (MethodDeclaration) node;
+        /// 处理不同类型的节点
+        if (node instanceof SimpleName) {
+            Node parent = node.getParentNode().orElse(null);
+            if (parent instanceof MethodDeclaration) {
+                MethodDeclaration method = (MethodDeclaration) parent;
+                // 1. 扩展范围包含所有注解（包括注解中的注解）
+                for (AnnotationExpr annotation : method.getAnnotations()) {
+                    Range annotationRange = annotation.getRange().orElse(null);
+                    if (annotationRange != null) {
+                        startLine = Math.min(startLine, annotationRange.begin.line - 1);
+                        endLine = Math.max(endLine, annotationRange.end.line - 1);
 
-            // 1. 包含方法上的所有注解
-            if (!method.getAnnotations().isEmpty()) {
-                int firstAnnotationLine = method.getAnnotations().get(0)
-                        .getRange().get().begin.line - 1;
-                startLine = Math.min(startLine, firstAnnotationLine);
-            }
+                        // 特殊处理包含数组值的注解（如@Parameters）
+                        if (annotation instanceof NormalAnnotationExpr) {
+                            NormalAnnotationExpr normalAnnotation = (NormalAnnotationExpr) annotation;
+                            for (MemberValuePair pair : normalAnnotation.getPairs()) {
+                                if (pair.getValue() instanceof ArrayInitializerExpr) {
+                                    ArrayInitializerExpr array = (ArrayInitializerExpr) pair.getValue();
+                                    for (Expression expr : array.getValues()) {
+                                        if (expr.getRange().isPresent()) {
+                                            endLine = Math.max(endLine, expr.getRange().get().end.line - 1);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
 
-            // 2. 包含整个方法体
-            if (method.getBody().isPresent()) {
-                endLine = method.getBody().get().getRange().get().end.line - 1;
+                // 2. 包含方法体（如果存在）
+                if (method.getBody().isPresent()) {
+                    Range bodyRange = method.getBody().get().getRange().get();
+                    endLine = Math.max(endLine, bodyRange.end.line - 1);
+                }
+
+                // 3. 包含参数列表中的所有注解
+                for (Parameter parameter : method.getParameters()) {
+                    for (AnnotationExpr paramAnnotation : parameter.getAnnotations()) {
+                        if (paramAnnotation.getRange().isPresent()) {
+                            startLine = Math.min(startLine, paramAnnotation.getRange().get().begin.line - 1);
+                        }
+                    }
+                }
             }
         }
         // 处理注解节点（如@Parameter）
@@ -361,10 +391,15 @@ public class CodeElementDiffer {
             Parameter parameter = (Parameter) node;
             // 包含参数上的所有注解
             if (!parameter.getAnnotations().isEmpty()) {
-                int firstAnnotationLine = parameter.getAnnotations().get(0).getRange().get().begin.line -2 ;
+                int firstAnnotationLine = parameter.getAnnotations().get(0).getRange().get().begin.line -1 ;
                 startLine = Math.min(startLine, firstAnnotationLine);
             }
         }
+
+
+        // 确保行号有效
+        startLine = Math.max(0, startLine);
+        endLine = Math.min(rightTextArea.getLineCount() - 1, endLine);
 
         // 计算高亮范围
         int highlightStart = rightTextArea.getLineStartOffset(startLine);

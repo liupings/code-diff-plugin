@@ -43,7 +43,7 @@ public class MyCodeCompareDialog extends DialogWrapper {
     private final RSyntaxTextArea leftTextArea;  // 左侧文本区域(本地代码)
     private final RSyntaxTextArea rightTextArea; // 右侧文本区域(远程代码)
     private final JButton fetchButton;           // 获取远程代码按钮
-    private final JButton compareButton;         // 对比代码按钮
+    //private final JButton compareButton;         // 对比代码按钮
     private final JButton applyButton;           // 应用所有更改按钮
     private final JButton saveButton;            // 保存按钮
     private final JTextField urlTextField;       // URL输入框
@@ -89,7 +89,7 @@ public class MyCodeCompareDialog extends DialogWrapper {
         leftTextArea.setText(sourceCode);
 
         fetchButton = new JButton("获取快速开发平台代码");
-        compareButton = new JButton("对比代码");
+        //compareButton = new JButton("对比代码");
         applyButton = new JButton("应用");
         saveButton = new JButton("保存");
         urlTextField = new JTextField(30);
@@ -97,7 +97,7 @@ public class MyCodeCompareDialog extends DialogWrapper {
         languageComboBox.setVisible(Boolean.FALSE);
 
         // 初始化高亮颜色
-        addedPainter = new DefaultHighlighter.DefaultHighlightPainter(new Color(218, 53, 53, 119));
+        addedPainter = new DefaultHighlighter.DefaultHighlightPainter(new Color(100, 255, 100, 20));
         removedPainter = new DefaultHighlighter.DefaultHighlightPainter(new Color(243, 243, 24, 100));
 
         // 初始化对话框
@@ -189,7 +189,7 @@ public class MyCodeCompareDialog extends DialogWrapper {
         controlPanel.add(urlTextField);
         controlPanel.add(fetchButton);
         controlPanel.add(languageComboBox);
-        controlPanel.add(compareButton);
+        //controlPanel.add(compareButton);
         return controlPanel;
     }
 
@@ -289,7 +289,7 @@ public class MyCodeCompareDialog extends DialogWrapper {
      */
     private void setupListeners() {
         fetchButton.addActionListener(this::fetchRemoteCode);
-        compareButton.addActionListener(this::compareCode);
+        //compareButton.addActionListener(this::compareCode);
         applyButton.addActionListener(this::applyAllChanges);
         saveButton.addActionListener(this::saveToSourceFile);
 
