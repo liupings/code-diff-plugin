@@ -109,7 +109,7 @@ public class MyCodeCompareDialog extends DialogWrapper {
         setupLoadingDialog();
 
         // 设置默认URL
-        urlTextField.setText("http://127.0.0.1:9091/interface-definition/api/generator/javaBasedByClassName/" + currentFile.getName());
+        urlTextField.setText("http://172.16.1.14:9000/api/interface-definition/api/generator/javaBasedByClassName/" + currentFile.getName());
     }
 
     @Override
