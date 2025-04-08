@@ -37,7 +37,7 @@
 <!--            <add-to-group group-id="EditorPopupMenu" anchor="first"/>-->
 <!--            <add-to-group group-id="ToolsMenu" anchor="last"/>-->
 <!--        </action>-->
-        <action id="MyCodeCompareActiona" class="com.rj.diff.current.MyCodeCompareAction" text="从快速开发平台更新代码AST" description="对比本地和远程代码">
+        <action id="MyCodeCompareActiona" class="com.rj.diff.current.MyCodeCompareAction" text="从快速开发平台更新代码(AST)" description="对比本地和远程代码">
             <add-to-group group-id="EditorPopupMenu" anchor="first"/>
             <add-to-group group-id="ToolsMenu" anchor="last"/>
         </action>
