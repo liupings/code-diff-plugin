@@ -99,7 +99,7 @@ public class MyCodeCompareDialog extends DialogWrapper {
         languageComboBox.setVisible(Boolean.FALSE);
         rightTextArea.setEditable(false);
         // 初始化高亮颜色
-        addedPainter = new DefaultHighlighter.DefaultHighlightPainter(new Color(100, 255, 100, 70));
+        addedPainter = new DefaultHighlighter.DefaultHighlightPainter(new Color(100, 255, 100, 30));
         removedPainter = new DefaultHighlighter.DefaultHighlightPainter(new Color(243, 243, 24, 100));
 
         // 初始化对话框
