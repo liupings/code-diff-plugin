@@ -2,6 +2,7 @@ package com.rj.diff.current;
 
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.HttpUtil;
+import com.intellij.ide.ui.LafManager;
 import com.intellij.openapi.editor.colors.EditorColorsManager;
 import com.intellij.openapi.editor.colors.EditorFontType;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
@@ -13,7 +14,6 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.components.JBScrollPane;
 import com.rj.diff.CodeDiffNotifications;
 import com.rj.diff.current.utils.CodeElementDiffer;
-import com.rj.diff.current.utils.ThemeUtils;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rsyntaxtextarea.Theme;
@@ -146,9 +146,9 @@ public class MyCodeCompareDialog extends DialogWrapper {
      */
     private void applyThemeBasedOnIDESettings(RSyntaxTextArea textArea) {
         try {
-            //boolean isDarkTheme = LafManager.getInstance().getCurrentUIThemeLookAndFeel().isDark();
+            boolean isDarkTheme = LafManager.getInstance().getCurrentUIThemeLookAndFeel().isDark();
 
-            if (ThemeUtils.isDarkTheme()) {
+            if (isDarkTheme) {
                 Theme theme = Theme.load(getClass().getResourceAsStream("/org/fife/ui/rsyntaxtextarea/themes/dark.xml"));
                 theme.apply(textArea);
                 textArea.setBackground(new Color(43, 43, 43));

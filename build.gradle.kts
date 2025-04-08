@@ -21,13 +21,9 @@ repositories {
 
 intellij {
     updateSinceUntilBuild.set(false) // 关闭构建范围检查
-//    localPath.set("C:\\Users\\Administrator\\.gradle\\caches\\modules-2\\files-2.1\\com.jetbrains.intellij.idea\\ideaIC\\2023.3.8\\bfbaf3e3e0fded07b36765dd8ac98c3901d3e106")
-//    plugins.set(listOf("java", "org.jetbrains.kotlin"))  // 加载依赖插件
-//    plugins = listOf("java")
-
-    version.set("2023.3.8") // 或者更高 IU 版本
-    type.set("IU") // 切换为 Ultimate Edition
-    plugins.set(listOf("java", "org.jetbrains.kotlin"))
+    localPath.set("C:\\Users\\Administrator\\.gradle\\caches\\modules-2\\files-2.1\\com.jetbrains.intellij.idea\\ideaIC\\2023.3.8\\bfbaf3e3e0fded07b36765dd8ac98c3901d3e106")
+    plugins.set(listOf("java", "org.jetbrains.kotlin"))  // 加载依赖插件
+    plugins = listOf("java")
 
 }
 dependencies {
