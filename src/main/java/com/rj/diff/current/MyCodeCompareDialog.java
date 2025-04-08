@@ -28,6 +28,8 @@ import javax.swing.text.Highlighter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.AdjustmentEvent;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -91,11 +93,11 @@ public class MyCodeCompareDialog extends DialogWrapper {
         fetchButton = new JButton("获取快速开发平台代码");
         //compareButton = new JButton("对比代码");
         applyButton = new JButton("应用");
-        saveButton = new JButton("保存");
+        saveButton = new JButton("保存更改到原文件");
         urlTextField = new JTextField(30);
         languageComboBox = new ComboBox<>(new String[]{"Java"});
         languageComboBox.setVisible(Boolean.FALSE);
-
+        rightTextArea.setEditable(false);
         // 初始化高亮颜色
         addedPainter = new DefaultHighlighter.DefaultHighlightPainter(new Color(100, 255, 100, 20));
         removedPainter = new DefaultHighlighter.DefaultHighlightPainter(new Color(243, 243, 24, 100));
@@ -110,6 +112,31 @@ public class MyCodeCompareDialog extends DialogWrapper {
 
         // 设置默认URL
         urlTextField.setText("http://172.16.1.14:9000/api/interface-definition/api/generator/javaBasedByClassName/" + currentFile.getName());
+
+        // 跟随主窗口移动更新加载框位置
+        getWindow().addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentMoved(ComponentEvent e) {
+                updateLoadingDialogPosition();
+            }
+
+            @Override
+            public void componentResized(ComponentEvent e) {
+                updateLoadingDialogPosition();
+            }
+        });
+
+    }
+    /**
+     * 更新加载对话框位置，使其居中在主窗口上
+     */
+    private void updateLoadingDialogPosition() {
+        if (loadingDialog != null && getWindow() != null) {
+            Window mainWindow = getWindow();
+            int x = mainWindow.getX() + (mainWindow.getWidth() - loadingDialog.getWidth()) / 2;
+            int y = mainWindow.getY() + (mainWindow.getHeight() - loadingDialog.getHeight()) / 2;
+            loadingDialog.setLocation(x, y);
+        }
     }
 
     @Override
@@ -426,8 +453,10 @@ public class MyCodeCompareDialog extends DialogWrapper {
      * 显示加载对话框
      */
     private void showLoadingDialog() {
+        updateLoadingDialogPosition();
         SwingUtilities.invokeLater(() -> loadingDialog.setVisible(true));
     }
+
 
     /**
      * 隐藏加载对话框
