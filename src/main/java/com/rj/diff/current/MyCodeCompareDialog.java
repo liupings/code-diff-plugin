@@ -94,7 +94,7 @@ public class MyCodeCompareDialog extends DialogWrapper {
         //compareButton = new JButton("对比代码");
         applyButton = new JButton("应用");
         saveButton = new JButton("保存更改到原文件");
-        urlTextField = new JTextField(30);
+        urlTextField = new JTextField(80);
         languageComboBox = new ComboBox<>(new String[]{"Java"});
         languageComboBox.setVisible(Boolean.FALSE);
         rightTextArea.setEditable(false);
