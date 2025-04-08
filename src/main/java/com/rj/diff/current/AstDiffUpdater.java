@@ -68,6 +68,7 @@ public class AstDiffUpdater {
             sourceClass = sourceCu.findFirst(ClassOrInterfaceDeclaration.class).orElseThrow(() -> new RuntimeException("在文件中找不到类"));
         } catch (RuntimeException e) {
             CodeDiffNotifications.showError(project,"错误","代码错误，AST无法解析！！！");
+            e.printStackTrace();
         }
 
         // 首先处理import语句（只添加不覆盖）
